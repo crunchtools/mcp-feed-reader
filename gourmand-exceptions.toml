@@ -1,0 +1,19 @@
+[[exceptions]]
+check = "summary_litter"
+path = "CLAUDE.md"
+justification = "Claude Code project instructions for AI assistant orientation"
+
+[[exceptions]]
+check = "primitive_obsession"
+path = "src/mcp_feed_reader_crunchtools/database.py"
+justification = "SQLite schema constants and response size limits are standard well-known values"
+
+[[exceptions]]
+check = "primitive_obsession"
+path = "src/mcp_feed_reader_crunchtools/__init__.py"
+justification = "Port 8000 is a standard default for HTTP servers"
+
+[[exceptions]]
+check = "primitive_obsession"
+path = "src/mcp_feed_reader_crunchtools/fetcher.py"
+justification = "HTTP timeout (30s) and response size limit (10MB) are standard well-known constants"
