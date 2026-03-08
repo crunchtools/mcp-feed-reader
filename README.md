@@ -2,7 +2,7 @@
 
 Secure MCP server for RSS/Atom feed reading with SQLite backend.
 
-<!-- mcp-name: mcp-feed-reader-crunchtools -->
+<!-- mcp-name: io.github.crunchtools/feed-reader -->
 
 ## Installation
 
