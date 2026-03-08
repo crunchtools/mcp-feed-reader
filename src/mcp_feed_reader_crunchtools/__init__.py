@@ -49,12 +49,13 @@ def main() -> None:
 
     get_db()
 
-    if args.transport == "stdio":
-        mcp.run(transport="stdio")
-    elif args.transport == "sse":
-        mcp.run(transport="sse", host=args.host, port=args.port)
-    else:
-        mcp.run(transport="streamable-http", host=args.host, port=args.port)
+    match args.transport:
+        case "stdio":
+            mcp.run(transport="stdio")
+        case "sse":
+            mcp.run(transport="sse", host=args.host, port=args.port)
+        case _:
+            mcp.run(transport="streamable-http", host=args.host, port=args.port)
 
 
 def _run_fetch() -> None:
@@ -63,6 +64,6 @@ def _run_fetch() -> None:
     from .tools.feeds import fetch_feeds
 
     get_db()
-    result = asyncio.run(fetch_feeds())
-    print(result)
+    fetch_summary = asyncio.run(fetch_feeds())
+    print(fetch_summary)
     sys.exit(0)

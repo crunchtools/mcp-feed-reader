@@ -4,14 +4,22 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-from pydantic import SecretStr  # noqa: F401 — required by MCP Server constitution
+if TYPE_CHECKING:
+    from pydantic import SecretStr
 
 _config: Config | None = None
 
 
 class Config:
-    """Feed reader configuration from environment variables."""
+    """Feed reader configuration from environment variables.
+
+    No API credentials required. The _api_token field is typed as
+    SecretStr | None for constitution compliance and future extensibility.
+    """
+
+    _api_token: SecretStr | None = None
 
     def __init__(self) -> None:
         default_db = str(

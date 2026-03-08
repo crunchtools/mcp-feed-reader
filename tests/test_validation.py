@@ -32,7 +32,7 @@ class TestFeedInput:
 
     def test_extra_fields_rejected(self) -> None:
         with pytest.raises(ValidationError):
-            FeedInput(url="https://example.com/feed.xml", extra="bad")  # type: ignore[call-arg]
+            FeedInput.model_validate({"url": "https://example.com/feed.xml", "extra": "bad"})
 
 
 class TestCategoryInput:

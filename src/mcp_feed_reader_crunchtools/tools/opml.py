@@ -17,7 +17,7 @@ async def import_opml(file_path: str) -> str:
     if not path.exists():
         raise FeedReaderError(f"File not found: {file_path}")
 
-    tree = ET.parse(path)  # noqa: S314
+    tree = ET.parse(path)  # noqa: S314 — OPML files are local user-provided files
     root = tree.getroot()
     body = root.find("body")
     if body is None:

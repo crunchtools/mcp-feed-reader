@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from typing import Any
 from urllib.parse import urlparse
 
-import feedparser  # type: ignore[import-untyped]
+import feedparser
 import httpx
 
 from .errors import FetchError
@@ -80,13 +80,26 @@ async def _download(
 
 def _parse_entry(entry: Any) -> dict[str, Any]:
     """Extract fields from a feedparser entry."""
-    content = ""
-    if hasattr(entry, "content") and entry.content:
-        content = entry.content[0].get("value", "")
-    elif hasattr(entry, "summary"):
-        content = entry.summary or ""
+    entry_content = getattr(entry, "content", None)
+    entry_summary = getattr(entry, "summary", None)
+    content = (
+        entry_content[0].get("value", "") if entry_content
+        else entry_summary or ""
+    )
 
-    published = _parse_date(entry)
+    published: str | None = None
+    for attr in ("published_parsed", "updated_parsed"):
+        parsed_time = getattr(entry, attr, None)
+        if parsed_time:
+            with contextlib.suppress(TypeError, ValueError):
+                dt = datetime(
+                    parsed_time[0], parsed_time[1], parsed_time[2],
+                    parsed_time[3], parsed_time[4], parsed_time[5],
+                    tzinfo=timezone.utc,
+                )
+                published = dt.isoformat()
+                break
+
     guid = entry.get("id") or entry.get("link") or entry.get("title", "")
 
     return {
@@ -97,21 +110,6 @@ def _parse_entry(entry: Any) -> dict[str, Any]:
         "content": content,
         "published": published,
     }
-
-
-def _parse_date(entry: Any) -> str | None:
-    """Extract a published date from a feedparser entry."""
-    for attr in ("published_parsed", "updated_parsed"):
-        parsed_time = getattr(entry, attr, None)
-        if parsed_time:
-            with contextlib.suppress(TypeError, ValueError):
-                dt = datetime(
-                    parsed_time[0], parsed_time[1], parsed_time[2],
-                    parsed_time[3], parsed_time[4], parsed_time[5],
-                    tzinfo=timezone.utc,
-                )
-                return dt.isoformat()
-    return None
 
 
 class FetchResult:

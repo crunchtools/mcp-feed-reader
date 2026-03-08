@@ -16,4 +16,14 @@ justification = "Port 8000 is a standard default for HTTP servers"
 [[exceptions]]
 check = "primitive_obsession"
 path = "src/mcp_feed_reader_crunchtools/fetcher.py"
-justification = "HTTP timeout (30s) and response size limit (10MB) are standard well-known constants"
+justification = "HTTP status codes 304/200 and response size limit (10MB) are standard well-known constants"
+
+[[exceptions]]
+check = "lint_suppression"
+path = "src/mcp_feed_reader_crunchtools/tools/opml.py"
+justification = "ET.parse on local OPML files is safe; defusedxml would add a dependency for no security benefit"
+
+[[exceptions]]
+check = "lint_suppression"
+path = "src/mcp_feed_reader_crunchtools/config.py"
+justification = "SecretStr TYPE_CHECKING import required by MCP Server constitution profile"

@@ -27,24 +27,20 @@ from .opml import (
 )
 
 __all__ = [
-    # feeds
     "add_feed",
     "list_feeds",
     "get_feed",
     "delete_feed",
     "fetch_feeds",
-    # entries
     "list_entries",
     "read_entry",
     "mark_read",
     "mark_unread",
     "search_entries",
-    # categories
     "list_categories",
     "create_category",
     "rename_category",
     "delete_category",
-    # opml
     "import_opml",
     "export_opml",
     "get_stats",

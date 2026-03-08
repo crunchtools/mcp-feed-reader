@@ -38,7 +38,6 @@ mcp = FastMCP(
 )
 
 
-# --- Feed Management ---
 
 
 @mcp.tool()
@@ -92,7 +91,6 @@ async def fetch_feeds_tool(feed_id: int | None = None) -> str:
     return await fetch_feeds(feed_id)
 
 
-# --- Entry Management ---
 
 
 @mcp.tool()
@@ -162,7 +160,6 @@ async def search_entries_tool(query: str, limit: int = 50) -> list[dict[str, Any
     return await search_entries(query, limit)
 
 
-# --- Category Management ---
 
 
 @mcp.tool()
@@ -202,7 +199,6 @@ async def delete_category_tool(category_id: int) -> str:
     return await delete_category(category_id)
 
 
-# --- Import/Export ---
 
 
 @mcp.tool()

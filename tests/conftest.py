@@ -11,10 +11,11 @@ from mcp_feed_reader_crunchtools import database as db_mod
 
 if TYPE_CHECKING:
     import sqlite3
+    from collections.abc import Generator
 
 
 @pytest.fixture(autouse=True)
-def _reset_singletons() -> None:  # type: ignore[misc]
+def _reset_singletons() -> Generator[None]:
     """Reset config and database singletons between tests."""
     config_mod._config = None
     db_mod._db = None
