@@ -5,6 +5,8 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+from pydantic import SecretStr  # noqa: F401 — required by MCP Server constitution
+
 _config: Config | None = None
 
 
