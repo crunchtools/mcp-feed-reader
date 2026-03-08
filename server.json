@@ -1,0 +1,21 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.crunchtools/feed-reader",
+  "title": "MCP Feed Reader",
+  "description": "RSS/Atom feed reader MCP server with SQLite backend",
+  "repository": {
+    "url": "https://github.com/crunchtools/mcp-feed-reader",
+    "source": "github"
+  },
+  "version": "0.1.1",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "identifier": "mcp-feed-reader-crunchtools",
+      "version": "0.1.1",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}

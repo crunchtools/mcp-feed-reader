@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: RSS/Atom Feed Specification
+    url: https://www.rssboard.org/rss-specification
+    about: Check the RSS specification for feed format questions

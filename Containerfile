@@ -14,7 +14,7 @@
 FROM quay.io/hummingbird/python:latest
 
 LABEL name="mcp-feed-reader-crunchtools" \
-      version="0.1.0" \
+      version="0.1.1" \
       summary="Secure MCP server for RSS/Atom feed reading" \
       description="A self-contained RSS/Atom feed reader MCP server with SQLite backend" \
       maintainer="crunchtools.com" \
@@ -35,9 +35,6 @@ RUN pip install --no-cache-dir .
 RUN python -c "from mcp_feed_reader_crunchtools import main; print('Installation verified')"
 
 ENV FEED_READER_DB=/data/feeds.db
-
-RUN mkdir -p /data
-VOLUME ["/data"]
 
 EXPOSE 8018
 ENTRYPOINT ["python", "-m", "mcp_feed_reader_crunchtools"]

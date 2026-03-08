@@ -5,6 +5,7 @@ from __future__ import annotations
 import contextlib
 from datetime import datetime, timezone
 from typing import Any
+from urllib.parse import urlparse
 
 import feedparser  # type: ignore[import-untyped]
 import httpx
@@ -37,8 +38,12 @@ async def fetch_feed(
     if parsed.bozo and not parsed.entries:
         raise FetchError(url, f"Parse error: {parsed.bozo_exception}")
 
+    title = parsed.feed.get("title", "").strip()
+    if not title:
+        title = urlparse(url).hostname or url
+
     return FetchResult(
-        title=parsed.feed.get("title", ""),
+        title=title,
         site_url=parsed.feed.get("link", ""),
         etag=response.headers.get("ETag"),
         last_modified=response.headers.get("Last-Modified"),
