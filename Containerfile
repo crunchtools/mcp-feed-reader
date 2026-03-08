@@ -14,7 +14,7 @@
 FROM quay.io/hummingbird/python:latest
 
 LABEL name="mcp-feed-reader-crunchtools" \
-      version="0.1.1" \
+      version="0.1.2" \
       summary="Secure MCP server for RSS/Atom feed reading" \
       description="A self-contained RSS/Atom feed reader MCP server with SQLite backend" \
       maintainer="crunchtools.com" \

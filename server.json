@@ -7,12 +7,12 @@
     "url": "https://github.com/crunchtools/mcp-feed-reader",
     "source": "github"
   },
-  "version": "0.1.1",
+  "version": "0.1.2",
   "packages": [
     {
       "registryType": "pypi",
       "identifier": "mcp-feed-reader-crunchtools",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "transport": {
         "type": "stdio"
       }

@@ -1,6 +1,6 @@
 [project]
 name = "mcp-feed-reader-crunchtools"
-version = "0.1.1"
+version = "0.1.2"
 description = "Secure MCP server for RSS/Atom feed reading — SQLite-backed, self-contained"
 requires-python = ">=3.10"
 license = "AGPL-3.0-or-later"
