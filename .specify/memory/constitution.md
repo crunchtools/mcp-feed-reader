@@ -20,6 +20,7 @@ Every change MUST preserve all five security layers. No exceptions.
 - N/A — This server has no external API credentials
 - No tokens, API keys, or passwords are required or stored
 - The server is self-contained with a local SQLite backend
+- SecretStr pattern available in config.py if credentials are added in future
 
 **Layer 2 — Input Validation:**
 - Pydantic models enforce strict data types with `extra="forbid"`
