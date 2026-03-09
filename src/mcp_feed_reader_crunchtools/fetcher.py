@@ -15,7 +15,7 @@ from .errors import FetchError
 FETCH_TIMEOUT = 30
 MAX_RESPONSE_SIZE = 10 * 1024 * 1024
 USER_AGENT = (
-    "mcp-feed-reader-crunchtools/0.1.0"
+    "mcp-feed-reader-crunchtools/0.1.3"
     " (+https://github.com/crunchtools/mcp-feed-reader)"
 )
 
