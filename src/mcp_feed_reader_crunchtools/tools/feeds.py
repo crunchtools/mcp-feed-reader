@@ -10,6 +10,7 @@ from typing import Any
 from .. import database as db
 from ..errors import DuplicateFeedError, FeedNotFoundError
 from ..fetcher import fetch_feed
+from ..models import FeedInput
 
 _FEED_LIST_SQL = """
     SELECT f.*, c.name AS category_name,
@@ -54,6 +55,8 @@ def _insert_entries(
 
 async def add_feed(url: str, category: str | None = None) -> dict[str, Any]:
     """Add a feed by URL, optionally assign to a category."""
+    validated = FeedInput(url=url, category=category)
+    url, category = validated.url, validated.category
     category_id = None
     if category:
         row = db.query_one(

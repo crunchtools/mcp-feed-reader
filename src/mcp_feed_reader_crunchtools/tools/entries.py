@@ -6,6 +6,7 @@ from typing import Any
 
 from .. import database as db
 from ..errors import EntryNotFoundError
+from ..models import EntryListParams, SearchParams
 
 
 async def list_entries(
@@ -16,6 +17,12 @@ async def list_entries(
     offset: int = 0,
 ) -> list[dict[str, Any]]:
     """List entries with optional filters."""
+    validated = EntryListParams(
+        feed_id=feed_id, category_id=category_id,
+        unread_only=unread_only, limit=limit, offset=offset,
+    )
+    feed_id, category_id = validated.feed_id, validated.category_id
+    unread_only, limit, offset = validated.unread_only, validated.limit, validated.offset
     conditions = []
     params: list[int | str] = []
 
@@ -105,6 +112,8 @@ async def mark_unread(entry_id: int) -> str:
 
 async def search_entries(query: str, limit: int = 50) -> list[dict[str, Any]]:
     """Full-text search across entry titles and content."""
+    validated = SearchParams(query=query, limit=limit)
+    query, limit = validated.query, validated.limit
     return db.query(
         """
         SELECT e.id, e.feed_id, e.title, e.url, e.author, e.published,

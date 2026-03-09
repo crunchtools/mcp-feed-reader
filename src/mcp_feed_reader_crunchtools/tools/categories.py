@@ -7,6 +7,7 @@ from typing import Any
 
 from .. import database as db
 from ..errors import CategoryNotFoundError, DuplicateCategoryError
+from ..models import CategoryInput
 
 
 async def list_categories() -> list[dict[str, Any]]:
@@ -24,6 +25,8 @@ async def list_categories() -> list[dict[str, Any]]:
 
 async def create_category(name: str) -> dict[str, Any]:
     """Create a new category."""
+    validated = CategoryInput(name=name)
+    name = validated.name
     try:
         cat_id = db.execute("INSERT INTO categories (name) VALUES (?)", (name,))
     except sqlite3.IntegrityError as exc:
@@ -35,6 +38,8 @@ async def create_category(name: str) -> dict[str, Any]:
 
 async def rename_category(category_id: int, name: str) -> dict[str, Any]:
     """Rename a category."""
+    validated = CategoryInput(name=name)
+    name = validated.name
     existing = db.query_one("SELECT id FROM categories WHERE id = ?", (category_id,))
     if not existing:
         raise CategoryNotFoundError(category_id)
