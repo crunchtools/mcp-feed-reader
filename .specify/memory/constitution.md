@@ -1,6 +1,6 @@
 # mcp-feed-reader-crunchtools Constitution
 
-> **Version:** 1.0.0
+> **Version:** 1.0.1
 > **Ratified:** 2026-03-07
 > **Status:** Active
 > **Inherits:** [crunchtools/constitution](https://github.com/crunchtools/constitution) v1.0.0
@@ -237,7 +237,29 @@ Every code change must pass through these gates in order:
 
 ---
 
-## VI. Naming Conventions
+## VI. Container Conventions
+
+- Use **Containerfile** (not Dockerfile) as the build file name.
+- Base image: **Hummingbird** (`quay.io/hummingbird/python:latest`) for minimal CVE surface.
+- Always `dnf clean all` after package installs.
+- Required LABELs: `maintainer`, `description`.
+- Required OCI labels:
+  ```
+  org.opencontainers.image.source=https://github.com/crunchtools/mcp-feed-reader
+  org.opencontainers.image.description=RSS/Atom feed reader MCP server with SQLite backend
+  org.opencontainers.image.licenses=AGPL-3.0-or-later
+  ```
+
+### Dual-Push CI Architecture
+
+Container CI workflows MUST use two separate jobs:
+
+1. **`build-and-push-quay`** — Builds and pushes to Quay.io. Includes Trivy security scan.
+2. **`build-and-push-ghcr`** — Builds and pushes to GHCR. Uses `needs: build-and-push-quay` dependency. Gated with `if: github.event_name != 'pull_request'`.
+
+---
+
+## VII. Naming Conventions
 
 | Context | Name |
 |---------|------|
@@ -252,7 +274,7 @@ Every code change must pass through these gates in order:
 
 ---
 
-## VII. Development Workflow
+## VIII. Development Workflow
 
 ### Adding a New Tool
 
@@ -274,7 +296,7 @@ Every code change must pass through these gates in order:
 
 ---
 
-## VIII. Governance
+## IX. Governance
 
 ### Amendment Process
 
@@ -288,3 +310,4 @@ Every code change must pass through these gates in order:
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0.0 | 2026-03-07 | Initial constitution |
+| 1.0.1 | 2026-03-16 | Add Section VI (Container Conventions); renumber VI-VIII → VII-IX |
