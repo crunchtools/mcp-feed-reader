@@ -1,20 +1,27 @@
 # MCP Feed Reader CrunchTools Container
-# Built on Hummingbird Python image (Red Hat UBI-based) for enterprise security
+# Built on Hummingbird Python image (Red Hat hardened, distroless)
 #
 # Build:
 #   podman build -t quay.io/crunchtools/mcp-feed-reader .
 #
 # Run:
 #   podman run -v feedreader-data:/data quay.io/crunchtools/mcp-feed-reader
-#
-# With Claude Code:
-#   claude mcp add mcp-feed-reader-crunchtools \
-#     -- podman run -i --rm -v feedreader-data:/data quay.io/crunchtools/mcp-feed-reader
 
+# Stage 1: Install dependencies (builder has /bin/sh)
+FROM quay.io/hummingbird/python:latest-builder AS pip-builder
+
+WORKDIR /app
+
+COPY pyproject.toml README.md ./
+COPY src/ ./src/
+
+RUN pip install --no-cache-dir --prefix=/usr .
+
+# Stage 2: Distroless runtime
 FROM quay.io/hummingbird/python:latest
 
 LABEL name="mcp-feed-reader-crunchtools" \
-      version="0.1.3" \
+      version="0.1.4" \
       summary="Secure MCP server for RSS/Atom feed reading" \
       description="A self-contained RSS/Atom feed reader MCP server with SQLite backend" \
       maintainer="crunchtools.com" \
@@ -25,14 +32,8 @@ LABEL name="mcp-feed-reader-crunchtools" \
       org.opencontainers.image.description="Secure MCP server for RSS/Atom feed reading" \
       org.opencontainers.image.licenses="AGPL-3.0-or-later"
 
-WORKDIR /app
-
-COPY pyproject.toml README.md ./
-COPY src/ ./src/
-
-RUN pip install --no-cache-dir .
-
-RUN python -c "from mcp_feed_reader_crunchtools import main; print('Installation verified')"
+COPY --from=pip-builder /usr/lib/python3.14/site-packages/ /usr/lib/python3.14/site-packages/
+COPY --from=pip-builder /usr/lib64/python3.14/site-packages/ /usr/lib64/python3.14/site-packages/
 
 ENV FEED_READER_DB=/data/feeds.db
 
