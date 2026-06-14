@@ -16,7 +16,7 @@ uv run mcp-feed-reader-crunchtools
 ## Tools (17)
 
 ### Feed Management (5)
-- add_feed_tool, list_feeds_tool, get_feed_tool, delete_feed_tool, fetch_feeds_tool
+- add_feed_tool, list_feeds_tool, get_feed_tool, delete_feed_tool, refresh_feeds_tool
 
 ### Entry Management (5)
 - list_entries_tool, read_entry_tool, mark_read_tool, mark_unread_tool, search_entries_tool

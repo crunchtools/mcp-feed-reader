@@ -82,11 +82,13 @@ async def delete_feed_tool(feed_id: int) -> str:
 
 
 @mcp.tool()
-async def fetch_feeds_tool(feed_id: int | None = None) -> str:
-    """Fetch new entries for all feeds or a specific feed.
+async def refresh_feeds_tool(feed_id: int | None = None) -> str:
+    """Crawl feed sources over the network for new content. Slow — takes 30-60s for all feeds.
+
+    Prefer the systemd timer for background updates. Use list_entries to read cached content.
 
     Args:
-        feed_id: Specific feed ID to fetch (optional, fetches all if omitted)
+        feed_id: Specific feed ID to refresh (optional, refreshes all if omitted)
     """
     return await fetch_feeds(feed_id)
 
