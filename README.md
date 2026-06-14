@@ -34,7 +34,7 @@ podman run -v feedreader-data:/data quay.io/crunchtools/mcp-feed-reader
 - `list_feeds_tool` — List all feeds with unread counts
 - `get_feed_tool` — Get feed details
 - `delete_feed_tool` — Remove a feed
-- `fetch_feeds_tool` — Fetch new entries
+- `refresh_feeds_tool` — Crawl feed sources for new content (slow, prefer systemd timer)
 
 ### Entry Management
 - `list_entries_tool` — List entries (filterable, paginated)
