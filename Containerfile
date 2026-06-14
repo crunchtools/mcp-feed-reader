@@ -10,6 +10,7 @@
 # Stage 1: Install dependencies (builder has /bin/sh)
 FROM quay.io/hummingbird/python:latest-builder AS pip-builder
 
+USER 0
 WORKDIR /app
 
 COPY pyproject.toml README.md ./
