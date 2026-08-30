@@ -36,7 +36,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run Gourmand
-        run: docker run --rm -v "$PWD":/src:ro -w /src quay.io/crunchtools/gourmand:latest --full .
+        run: docker run --rm -v "$PWD":/src -w /src quay.io/crunchtools/gourmand:latest --full .
 
   build-container:
     runs-on: ubuntu-latest
