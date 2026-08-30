@@ -16,6 +16,7 @@ async def list_entries(
     unread_only: bool = True,
     limit: int = 50,
     offset: int = 0,
+    *,
     since_days: int | None = None,
     published_after: str | None = None,
     published_before: str | None = None,

@@ -28,7 +28,7 @@ from .tools import (
 
 mcp = FastMCP(
     "mcp-feed-reader-crunchtools",
-    version="0.2.0",
+    version="0.2.1",
     instructions=(
         "RSS/Atom feed reader MCP server with SQLite backend. "
         "Use add_feed to subscribe, fetch_feeds to pull new content, "
@@ -102,6 +102,7 @@ async def list_entries_tool(
     unread_only: bool = True,
     limit: int = 50,
     offset: int = 0,
+    *,
     since_days: int | None = None,
     published_after: str | None = None,
     published_before: str | None = None,
@@ -126,7 +127,8 @@ async def list_entries_tool(
     """
     return await list_entries(
         feed_id, category_id, unread_only, limit, offset,
-        since_days, published_after, published_before,
+        since_days=since_days, published_after=published_after,
+        published_before=published_before,
     )
 
 
