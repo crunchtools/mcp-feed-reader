@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import tempfile
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, patch
@@ -246,6 +247,99 @@ class TestEntryTools:
         results = await search_entries("first post")
         assert len(results) >= 1
         assert results[0]["title"] == "First Post"
+
+
+class TestEntryDateWindow:
+    @pytest.fixture(autouse=True)
+    def _seed_dated_entries(self, in_memory_db: sqlite3.Connection) -> None:
+        """Seed a feed with dated entries.
+
+        Row tuple is (guid, title, published, created_at). Null-published rows
+        must window by ingest time; the offset row is 05:00+02:00 == 03:00 UTC
+        on 2026-08-27, so a naive string compare would mis-sort it.
+        """
+        db_mod.execute(
+            "INSERT INTO feeds (id, url, title) VALUES (1, ?, ?)",
+            ("https://example.com/feed.xml", "Test Feed"),
+        )
+        rows = [
+            ("old", "Old Post", "2026-01-01T00:00:00+00:00", "2026-01-01 00:00:00"),
+            ("recent", "Recent Post", "2026-08-28T00:00:00+00:00", "2026-08-28 00:00:00"),
+            ("null-recent", "Null Recent", None, "2026-08-29 00:00:00"),
+            ("null-old", "Null Old", None, "2026-01-02 00:00:00"),
+            ("offset", "Offset Post", "2026-08-27T05:00:00+02:00", "2026-01-03 00:00:00"),
+        ]
+        for guid, title, published, created_at in rows:
+            db_mod.execute(
+                "INSERT INTO entries (feed_id, guid, title, url, published, created_at)"
+                " VALUES (1, ?, ?, ?, ?, ?)",
+                (guid, title, f"https://example.com/{guid}", published, created_at),
+            )
+
+    @staticmethod
+    def _titles(entries: list[dict[str, object]]) -> set[str]:
+        return {str(e["title"]) for e in entries}
+
+    @pytest.mark.asyncio
+    async def test_published_after_window(self) -> None:
+        entries = await list_entries(unread_only=False, published_after="2026-08-01")
+        assert self._titles(entries) == {"Recent Post", "Null Recent", "Offset Post"}
+
+    @pytest.mark.asyncio
+    async def test_null_published_falls_back_to_created_at(self) -> None:
+        """Null-published rows window by created_at (2026-08-29 in, 2026-01-02 out)."""
+        entries = await list_entries(unread_only=False, published_after="2026-08-01")
+        titles = self._titles(entries)
+        assert "Null Recent" in titles
+        assert "Null Old" not in titles
+
+    @pytest.mark.asyncio
+    async def test_offset_normalized_not_string_compared(self) -> None:
+        """Offset post is 03:00 UTC; datetime() must normalize before comparing."""
+        included = await list_entries(
+            unread_only=False,
+            published_after="2026-08-27T02:00:00Z",
+            published_before="2026-08-27T23:59:59Z",
+        )
+        assert "Offset Post" in self._titles(included)
+        excluded = await list_entries(
+            unread_only=False,
+            published_after="2026-08-27T04:00:00Z",
+            published_before="2026-08-27T23:59:59Z",
+        )
+        assert "Offset Post" not in self._titles(excluded)
+
+    @pytest.mark.asyncio
+    async def test_closed_range(self) -> None:
+        entries = await list_entries(
+            unread_only=False,
+            published_after="2026-08-28T00:00:00Z",
+            published_before="2026-08-28T23:59:59Z",
+        )
+        assert self._titles(entries) == {"Recent Post"}
+
+    @pytest.mark.asyncio
+    async def test_since_days_relative(self) -> None:
+        now = datetime.now(timezone.utc)
+        db_mod.execute(
+            "INSERT INTO entries (feed_id, guid, title, url, published, created_at)"
+            " VALUES (1, ?, ?, ?, ?, ?)",
+            (
+                "fresh", "Fresh Post", "https://example.com/fresh",
+                (now - timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%S+00:00"),
+                now.strftime("%Y-%m-%d %H:%M:%S"),
+            ),
+        )
+        entries = await list_entries(unread_only=False, since_days=7)
+        titles = self._titles(entries)
+        assert "Fresh Post" in titles
+        assert "Old Post" not in titles
+
+    @pytest.mark.asyncio
+    async def test_no_window_returns_all(self) -> None:
+        """No date filter returns every seeded row (unchanged behavior)."""
+        entries = await list_entries(unread_only=False, limit=500)
+        assert len(entries) == 5
 
 
 class TestOPMLTools:

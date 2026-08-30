@@ -64,6 +64,41 @@ class TestEntryListParams:
         with pytest.raises(ValidationError):
             EntryListParams(offset=-1)
 
+    def test_since_days_defaults_none(self) -> None:
+        params = EntryListParams()
+        assert params.since_days is None
+        assert params.published_after is None
+        assert params.published_before is None
+
+    def test_since_days_out_of_range(self) -> None:
+        with pytest.raises(ValidationError):
+            EntryListParams(since_days=0)
+        with pytest.raises(ValidationError):
+            EntryListParams(since_days=367)
+
+    def test_published_after_normalized_utc(self) -> None:
+        """Offset-bearing input is converted to a canonical UTC string."""
+        params = EntryListParams(published_after="2026-08-23T05:00:00+02:00")
+        assert params.published_after == "2026-08-23 03:00:00"
+
+    def test_published_bounds_date_only(self) -> None:
+        params = EntryListParams(published_after="2026-08-23")
+        assert params.published_after == "2026-08-23 00:00:00"
+
+    def test_published_z_suffix(self) -> None:
+        params = EntryListParams(published_before="2026-08-30T12:00:00Z")
+        assert params.published_before == "2026-08-30 12:00:00"
+
+    def test_invalid_timestamp(self) -> None:
+        with pytest.raises(ValidationError, match="Invalid timestamp"):
+            EntryListParams(published_after="not-a-date")
+
+    def test_since_days_mutually_exclusive(self) -> None:
+        with pytest.raises(ValidationError, match="mutually exclusive"):
+            EntryListParams(since_days=7, published_after="2026-08-23")
+        with pytest.raises(ValidationError, match="mutually exclusive"):
+            EntryListParams(since_days=7, published_before="2026-08-30")
+
 
 class TestSearchParams:
     def test_valid(self) -> None:

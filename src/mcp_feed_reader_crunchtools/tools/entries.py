@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from .. import database as db
@@ -15,11 +16,22 @@ async def list_entries(
     unread_only: bool = True,
     limit: int = 50,
     offset: int = 0,
+    since_days: int | None = None,
+    published_after: str | None = None,
+    published_before: str | None = None,
 ) -> list[dict[str, Any]]:
-    """List entries with optional filters."""
+    """List entries with optional filters.
+
+    Date-window bounds filter on datetime(COALESCE(published, created_at)): the
+    COALESCE mirrors the ORDER BY so null-published entries window by ingest time,
+    and datetime() normalizes the two on-disk formats (offset-bearing ISO-8601
+    published vs. space-separated UTC created_at) before comparison.
+    """
     validated = EntryListParams(
         feed_id=feed_id, category_id=category_id,
         unread_only=unread_only, limit=limit, offset=offset,
+        since_days=since_days, published_after=published_after,
+        published_before=published_before,
     )
     feed_id, category_id = validated.feed_id, validated.category_id
     unread_only, limit, offset = validated.unread_only, validated.limit, validated.offset
@@ -36,6 +48,21 @@ async def list_entries(
 
     if unread_only:
         conditions.append("e.is_read = 0")
+
+    lower_bound: str | None = None
+    if validated.since_days is not None:
+        cutoff = datetime.now(timezone.utc) - timedelta(days=validated.since_days)
+        lower_bound = cutoff.strftime("%Y-%m-%d %H:%M:%S")
+    elif validated.published_after is not None:
+        lower_bound = validated.published_after
+
+    if lower_bound is not None:
+        conditions.append("datetime(COALESCE(e.published, e.created_at)) >= datetime(?)")
+        params.append(lower_bound)
+
+    if validated.published_before is not None:
+        conditions.append("datetime(COALESCE(e.published, e.created_at)) <= datetime(?)")
+        params.append(validated.published_before)
 
     where_clause = "WHERE " + " AND ".join(conditions) if conditions else ""
 

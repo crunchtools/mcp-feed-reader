@@ -28,7 +28,7 @@ from .tools import (
 
 mcp = FastMCP(
     "mcp-feed-reader-crunchtools",
-    version="0.1.3",
+    version="0.2.0",
     instructions=(
         "RSS/Atom feed reader MCP server with SQLite backend. "
         "Use add_feed to subscribe, fetch_feeds to pull new content, "
@@ -102,8 +102,15 @@ async def list_entries_tool(
     unread_only: bool = True,
     limit: int = 50,
     offset: int = 0,
+    since_days: int | None = None,
+    published_after: str | None = None,
+    published_before: str | None = None,
 ) -> list[dict[str, Any]]:
     """List entries with optional filters.
+
+    Date-window filters apply to COALESCE(published, created_at), so entries
+    with no publish date still fall in the window by ingest time. Use them to
+    fetch only a trailing period instead of paging through everything.
 
     Args:
         feed_id: Filter by feed ID
@@ -111,8 +118,16 @@ async def list_entries_tool(
         unread_only: Show only unread entries (default: True)
         limit: Max entries to return (1-500, default: 50)
         offset: Pagination offset (default: 0)
+        since_days: Only entries dated within the last N days (1-366).
+            Mutually exclusive with published_after/published_before.
+        published_after: Inclusive lower bound, ISO-8601 date or datetime
+            (e.g. "2026-08-23" or "2026-08-23T00:00:00Z").
+        published_before: Inclusive upper bound, ISO-8601 date or datetime.
     """
-    return await list_entries(feed_id, category_id, unread_only, limit, offset)
+    return await list_entries(
+        feed_id, category_id, unread_only, limit, offset,
+        since_days, published_after, published_before,
+    )
 
 
 @mcp.tool()
