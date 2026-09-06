@@ -27,3 +27,8 @@ justification = "ET.parse on local OPML files is safe; defusedxml would add a de
 check = "lint_suppression"
 path = "src/mcp_feed_reader_crunchtools/config.py"
 justification = "SecretStr TYPE_CHECKING import required by MCP Server constitution profile"
+
+[[exceptions]]
+check = "copy_paste_detection"
+path = "src/mcp_feed_reader_crunchtools/database.py"
+justification = "query, query_one and execute share a two-line connection-and-cursor setup and then diverge: all rows, first row or None, and lastrowid after commit. Three distinct operations, not duplicated logic."
