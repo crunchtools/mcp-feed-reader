@@ -6,7 +6,7 @@ import sqlite3
 from typing import Any
 
 from .. import database as db
-from ..errors import CategoryNotFoundError, DuplicateCategoryError
+from ..errors import CategoryNotFoundError, DuplicateCategoryError, RowVanishedError
 from ..models import CategoryInput
 
 
@@ -32,7 +32,8 @@ async def create_category(name: str) -> dict[str, Any]:
     except sqlite3.IntegrityError as exc:
         raise DuplicateCategoryError(name) from exc
     row = db.query_one("SELECT * FROM categories WHERE id = ?", (cat_id,))
-    assert row is not None
+    if row is None:
+        raise RowVanishedError("categories", cat_id, "insert")
     return row
 
 
@@ -48,7 +49,8 @@ async def rename_category(category_id: int, name: str) -> dict[str, Any]:
     except sqlite3.IntegrityError as exc:
         raise DuplicateCategoryError(name) from exc
     row = db.query_one("SELECT * FROM categories WHERE id = ?", (category_id,))
-    assert row is not None
+    if row is None:
+        raise RowVanishedError("categories", category_id, "rename")
     return row
 
 

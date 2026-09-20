@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from .. import database as db
-from ..errors import DuplicateFeedError, FeedNotFoundError
+from ..errors import DuplicateFeedError, FeedNotFoundError, RowVanishedError
 from ..fetcher import fetch_feed
 from ..models import FeedInput
 
@@ -88,7 +88,8 @@ async def add_feed(url: str, category: str | None = None) -> dict[str, Any]:
         _insert_entries(feed_id, result.entries)
 
     row = db.query_one("SELECT * FROM feeds WHERE id = ?", (feed_id,))
-    assert row is not None
+    if row is None:
+        raise RowVanishedError("feeds", feed_id, "upsert")
     return row
 
 
