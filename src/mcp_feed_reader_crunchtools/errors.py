@@ -47,3 +47,12 @@ class FetchError(FeedReaderError):
 
     def __init__(self, url: str, reason: str) -> None:
         super().__init__(f"Failed to fetch {url}: {reason}")
+
+
+class RowVanishedError(FeedReaderError):
+    """Raised when a row cannot be re-read immediately after its own
+    insert/update within the same transaction -- an internal invariant
+    violation, not a user-facing validation error."""
+
+    def __init__(self, table: str, row_id: int, operation: str) -> None:
+        super().__init__(f"{table} row {row_id} vanished immediately after {operation}")

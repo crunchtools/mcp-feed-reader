@@ -50,24 +50,46 @@ target-version = "py310"
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP", "S", "B", "C4", "C901", "DTZ", "T10", "ISC", "PIE", "PT", "RET", "SIM", "TID", "TCH", "ARG", "PLC", "PLE", "PLR", "PLW", "TRY", "RUF"]
 ignore = [
-    "S101",     # assert allowed in tests
-    "TRY003",   # long exception messages ok
-    "PLR0913",  # many arguments ok for tools
-    "PLR2004",  # magic numbers ok (HTTP status codes, limits)
-    "PLW0603",  # global statement ok for singletons
-    "PIE790",   # pass in empty classes ok
-    "PLC0415",  # imports in tests ok
-    "S105",     # hardcoded passwords in tests ok
-    "TID252",   # relative imports in package ok
-    "RUF022",   # __all__ sorted by category, not alphabetically
+    # TID252: relative imports within the package. Audited with
+    # `ruff check --select TID252` -- 15 hits across 4 files under tools/
+    # (categories.py, entries.py, feeds.py, opml.py), all the same
+    # `from .. import database as db` / `from ..module import X` idiom
+    # reaching the parent package. Confirmed uniform, not masking
+    # inconsistent design.
+    "TID252",
 ]
 
 [tool.ruff.lint.pylint]
 max-branches = 10
 max-statements = 50
 
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["S105", "PLC0415", "PLR2004", "ARG002"]
+"tests/*" = ["S101", "PLC0415", "PLR2004", "ARG002"]
+# TRY003: 2 hits, both in opml.py's own FeedReaderError subclass messages.
+"src/mcp_feed_reader_crunchtools/tools/opml.py" = ["TRY003"]
+# PLR0913: 2 hits -- the MCP tool wrapper and its implementation for the
+# same query-filter function (list_entries), which legitimately takes 8
+# independent optional filters.
+"src/mcp_feed_reader_crunchtools/server.py" = ["PLR0913"]
+"src/mcp_feed_reader_crunchtools/tools/entries.py" = ["PLR0913"]
+# PLR2004: 2 hits, HTTP status codes (304/200) in the feed-fetch conditional
+# request logic.
+"src/mcp_feed_reader_crunchtools/fetcher.py" = ["PLR2004"]
+# PLW0603: 2 hits, the module-global singleton accessor idiom
+# (get_config/get_db).
+"src/mcp_feed_reader_crunchtools/config.py" = ["PLW0603"]
+"src/mcp_feed_reader_crunchtools/database.py" = ["PLW0603"]
+# PLC0415: 4 hits, deferred imports in main()/_run_fetch() that keep the
+# CLI's --fetch path from importing the full MCP server (mcp.server.fastmcp)
+# when only doing a systemd-timer fetch-and-exit.
+"src/mcp_feed_reader_crunchtools/__init__.py" = ["PLC0415"]
+# RUF022: 1 hit, the only __all__ in the project, grouped by tool category
+# (Feeds/Entries/Categories/OPML) with comment headers rather than sorted
+# alphabetically.
+"src/mcp_feed_reader_crunchtools/tools/__init__.py" = ["RUF022"]
 
 [tool.mypy]
 python_version = "3.10"
