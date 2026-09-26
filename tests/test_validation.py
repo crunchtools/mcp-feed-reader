@@ -74,6 +74,12 @@ class TestEntryListParams:
         assert params.feed_id is None
         assert params.category_id is None
 
+    def test_bool_id_rejected(self) -> None:
+        # bool is an int subclass; False must not silently become feed 0.
+        for value in (True, False):
+            with pytest.raises(ValidationError):
+                EntryListParams(feed_id=value)
+
     def test_blank_bound_with_real_bound(self) -> None:
         params = EntryListParams(published_after="2026-09-19", published_before="  ")
         assert params.published_after == "2026-09-19 00:00:00"

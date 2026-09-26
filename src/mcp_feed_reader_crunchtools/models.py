@@ -22,6 +22,8 @@ def unset_if_not_id(value: Any) -> Any:
     parameter send ``feed_id: 0`` meaning "any", which used to fail as
     "Feed not found: 0" (RT #1505).
     """
+    # bool is an int subclass: leave it for the strict field type to reject,
+    # rather than reading False as ID 0.
     if isinstance(value, int) and not isinstance(value, bool) and value <= 0:
         return None
     return value
@@ -51,8 +53,8 @@ class CategoryInput(BaseModel, extra="forbid"):
 class EntryListParams(BaseModel, extra="forbid"):
     """Parameters for listing entries."""
 
-    feed_id: int | None = None
-    category_id: int | None = None
+    feed_id: int | None = Field(default=None, strict=True)
+    category_id: int | None = Field(default=None, strict=True)
     unread_only: bool = True
     limit: int = Field(default=DEFAULT_PAGE_SIZE, ge=1, le=MAX_PAGE_SIZE)
     offset: int = Field(default=0, ge=0)
