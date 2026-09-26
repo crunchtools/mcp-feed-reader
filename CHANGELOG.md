@@ -8,6 +8,17 @@ Entries prior to 2026-09-19 are back-filled from GitHub Release notes (RT #1484)
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-09-26
+
+### Fixed
+- `refresh_feeds_tool`: a non-positive `feed_id` means "not given" (refresh
+  all) instead of "Feed not found: 0".
+- `list_entries_tool`: a non-positive `feed_id` or `category_id` means "not
+  given", and a blank `published_after` / `published_before` means no bound.
+- Both come from tool-calling models that fill every optional parameter with
+  `0` or `""` (RT #1505).
+- The fetcher User-Agent carries the package version instead of a stale 0.1.3.
+
 ## [0.2.1] - 2026-08-30
 
 ### Fixed

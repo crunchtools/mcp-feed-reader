@@ -6,6 +6,7 @@ from typing import Any
 
 from fastmcp import FastMCP
 
+from .models import unset_if_not_id
 from .tools import (
     add_feed,
     create_category,
@@ -28,7 +29,7 @@ from .tools import (
 
 mcp = FastMCP(
     "mcp-feed-reader-crunchtools",
-    version="0.2.1",
+    version="0.2.2",
     instructions=(
         "RSS/Atom feed reader MCP server with SQLite backend. "
         "Use add_feed to subscribe, fetch_feeds to pull new content, "
@@ -36,8 +37,6 @@ mcp = FastMCP(
         "Supports OPML import/export and full-text search."
     ),
 )
-
-
 
 
 @mcp.tool()
@@ -90,9 +89,7 @@ async def refresh_feeds_tool(feed_id: int | None = None) -> str:
     Args:
         feed_id: Specific feed ID to refresh (optional, refreshes all if omitted)
     """
-    return await fetch_feeds(feed_id)
-
-
+    return await fetch_feeds(unset_if_not_id(feed_id))
 
 
 @mcp.tool()
@@ -126,8 +123,13 @@ async def list_entries_tool(
         published_before: Inclusive upper bound, ISO-8601 date or datetime.
     """
     return await list_entries(
-        feed_id, category_id, unread_only, limit, offset,
-        since_days=since_days, published_after=published_after,
+        feed_id,
+        category_id,
+        unread_only,
+        limit,
+        offset,
+        since_days=since_days,
+        published_after=published_after,
         published_before=published_before,
     )
 
@@ -179,8 +181,6 @@ async def search_entries_tool(query: str, limit: int = 50) -> list[dict[str, Any
     return await search_entries(query, limit)
 
 
-
-
 @mcp.tool()
 async def list_categories_tool() -> list[dict[str, Any]]:
     """List all categories with feed counts."""
@@ -216,8 +216,6 @@ async def delete_category_tool(category_id: int) -> str:
         category_id: Category ID to delete
     """
     return await delete_category(category_id)
-
-
 
 
 @mcp.tool()

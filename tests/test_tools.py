@@ -178,6 +178,26 @@ class TestFeedTools:
         assert "2 new entries" in result
 
     @pytest.mark.asyncio
+    async def test_refresh_tool_feed_id_zero_means_all(
+        self, in_memory_db: sqlite3.Connection
+    ) -> None:
+        # gpt-6-luna called refresh_feeds_tool(feed_id=0) and got "Feed not found: 0".
+        from mcp_feed_reader_crunchtools.server import refresh_feeds_tool
+
+        db_mod.execute(
+            "INSERT INTO feeds (url, title) VALUES (?, ?)",
+            ("https://example.com/feed.xml", "Test"),
+        )
+        with patch(
+            "mcp_feed_reader_crunchtools.tools.feeds.fetch_feed",
+            new_callable=AsyncMock,
+            return_value=_mock_fetch_result(),
+        ):
+            fn = getattr(refresh_feeds_tool, "fn", refresh_feeds_tool)
+            result = await fn(feed_id=0)
+        assert "2 new entries" in result
+
+    @pytest.mark.asyncio
     async def test_duplicate_feed(self, in_memory_db: sqlite3.Connection) -> None:
         with patch(
             "mcp_feed_reader_crunchtools.tools.feeds.fetch_feed",
@@ -188,10 +208,13 @@ class TestFeedTools:
 
         from mcp_feed_reader_crunchtools.errors import DuplicateFeedError
 
-        with pytest.raises(DuplicateFeedError), patch(
-            "mcp_feed_reader_crunchtools.tools.feeds.fetch_feed",
-            new_callable=AsyncMock,
-            return_value=_mock_fetch_result(),
+        with (
+            pytest.raises(DuplicateFeedError),
+            patch(
+                "mcp_feed_reader_crunchtools.tools.feeds.fetch_feed",
+                new_callable=AsyncMock,
+                return_value=_mock_fetch_result(),
+            ),
         ):
             await add_feed("https://example.com/feed.xml")
 
@@ -325,7 +348,9 @@ class TestEntryDateWindow:
             "INSERT INTO entries (feed_id, guid, title, url, published, created_at)"
             " VALUES (1, ?, ?, ?, ?, ?)",
             (
-                "fresh", "Fresh Post", "https://example.com/fresh",
+                "fresh",
+                "Fresh Post",
+                "https://example.com/fresh",
                 (now - timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%S+00:00"),
                 now.strftime("%Y-%m-%d %H:%M:%S"),
             ),

@@ -50,6 +50,41 @@ class TestCategoryInput:
 
 
 class TestEntryListParams:
+    def test_luna_filled_optionals(self) -> None:
+        # The exact call gpt-6-luna made on 2026-09-26 (RT #1505): every optional
+        # filled, zeros for "any" IDs, blanks for no date bound.
+        params = EntryListParams(
+            feed_id=0,
+            category_id=1,
+            unread_only=False,
+            limit=60,
+            offset=0,
+            since_days=7,
+            published_after="",
+            published_before="",
+        )
+        assert params.feed_id is None
+        assert params.category_id == 1
+        assert params.published_after is None
+        assert params.published_before is None
+        assert params.since_days == 7
+
+    def test_non_positive_ids_are_unset(self) -> None:
+        params = EntryListParams(feed_id=-3, category_id=0)
+        assert params.feed_id is None
+        assert params.category_id is None
+
+    def test_bool_id_rejected(self) -> None:
+        # bool is an int subclass; False must not silently become feed 0.
+        for value in (True, False):
+            with pytest.raises(ValidationError):
+                EntryListParams(feed_id=value)
+
+    def test_blank_bound_with_real_bound(self) -> None:
+        params = EntryListParams(published_after="2026-09-19", published_before="  ")
+        assert params.published_after == "2026-09-19 00:00:00"
+        assert params.published_before is None
+
     def test_defaults(self) -> None:
         params = EntryListParams()
         assert params.unread_only is True

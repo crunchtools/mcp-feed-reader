@@ -29,9 +29,13 @@ async def list_entries(
     published vs. space-separated UTC created_at) before comparison.
     """
     validated = EntryListParams(
-        feed_id=feed_id, category_id=category_id,
-        unread_only=unread_only, limit=limit, offset=offset,
-        since_days=since_days, published_after=published_after,
+        feed_id=feed_id,
+        category_id=category_id,
+        unread_only=unread_only,
+        limit=limit,
+        offset=offset,
+        since_days=since_days,
+        published_after=published_after,
         published_before=published_before,
     )
     feed_id, category_id = validated.feed_id, validated.category_id
@@ -116,8 +120,7 @@ async def mark_read(
 
     if feed_id is not None:
         db.execute(
-            "UPDATE entries SET is_read = 1"
-            " WHERE feed_id = ? AND is_read = 0",
+            "UPDATE entries SET is_read = 1 WHERE feed_id = ? AND is_read = 0",
             (feed_id,),
         )
         return f"Marked all unread entries in feed {feed_id} as read"
