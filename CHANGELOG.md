@@ -8,6 +8,15 @@ Entries prior to 2026-09-19 are back-filled from GitHub Release notes (RT #1484)
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-09-26
+
+### Fixed
+- `list_entries_tool` / `refresh_feeds_tool`: a non-positive `feed_id` or
+  `category_id` means "not given", and a blank `published_after` /
+  `published_before` means no bound. Tool-calling models that fill every
+  optional parameter sent `feed_id: 0` and `""`, which failed as
+  "Feed not found: 0" and a validation error (RT #1505).
+
 ## [0.2.1] - 2026-08-30
 
 ### Fixed

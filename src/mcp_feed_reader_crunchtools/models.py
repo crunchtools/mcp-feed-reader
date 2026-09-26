@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -12,6 +13,18 @@ MAX_QUERY_LENGTH = 500
 DEFAULT_PAGE_SIZE = 50
 MAX_PAGE_SIZE = 500
 MAX_SINCE_DAYS = 366
+
+
+def unset_if_not_id(value: Any) -> Any:
+    """Map a non-positive ID to None ("not given").
+
+    SQLite row IDs start at 1. Tool-calling models that fill every optional
+    parameter send ``feed_id: 0`` meaning "any", which used to fail as
+    "Feed not found: 0" (RT #1505).
+    """
+    if isinstance(value, int) and not isinstance(value, bool) and value <= 0:
+        return None
+    return value
 
 
 class FeedInput(BaseModel, extra="forbid"):
@@ -46,6 +59,19 @@ class EntryListParams(BaseModel, extra="forbid"):
     since_days: int | None = Field(default=None, ge=1, le=MAX_SINCE_DAYS)
     published_after: str | None = Field(default=None, max_length=MAX_NAME_LENGTH)
     published_before: str | None = Field(default=None, max_length=MAX_NAME_LENGTH)
+
+    @field_validator("feed_id", "category_id", mode="before")
+    @classmethod
+    def _unset_non_ids(cls, v: Any) -> Any:
+        return unset_if_not_id(v)
+
+    @field_validator("published_after", "published_before", mode="before")
+    @classmethod
+    def _blank_bound_is_unset(cls, v: Any) -> Any:
+        """``""`` means no bound, the same as omitting it (RT #1505)."""
+        if isinstance(v, str) and not v.strip():
+            return None
+        return v
 
     @field_validator("published_after", "published_before")
     @classmethod

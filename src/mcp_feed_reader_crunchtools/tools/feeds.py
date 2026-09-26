@@ -34,9 +34,7 @@ _UPDATE_FEED_SQL = """
 """
 
 
-def _insert_entries(
-    parent_id: int, entries: list[dict[str, Any]]
-) -> int:
+def _insert_entries(parent_id: int, entries: list[dict[str, Any]]) -> int:
     """Insert entries, skipping duplicates. Returns count of new entries."""
     new_count = 0
     for entry in entries:
@@ -44,8 +42,12 @@ def _insert_entries(
             db.execute(
                 _INSERT_ENTRY_SQL,
                 (
-                    parent_id, entry["guid"], entry["title"],
-                    entry["url"], entry["author"], entry["content"],
+                    parent_id,
+                    entry["guid"],
+                    entry["title"],
+                    entry["url"],
+                    entry["author"],
+                    entry["content"],
                     entry["published"],
                 ),
             )
@@ -59,15 +61,11 @@ async def add_feed(url: str, category: str | None = None) -> dict[str, Any]:
     url, category = validated.url, validated.category
     category_id = None
     if category:
-        row = db.query_one(
-            "SELECT id FROM categories WHERE name = ?", (category,)
-        )
+        row = db.query_one("SELECT id FROM categories WHERE name = ?", (category,))
         if row:
             category_id = row["id"]
         else:
-            category_id = db.execute(
-                "INSERT INTO categories (name) VALUES (?)", (category,)
-            )
+            category_id = db.execute("INSERT INTO categories (name) VALUES (?)", (category,))
 
     try:
         feed_id = db.execute(
@@ -82,8 +80,7 @@ async def add_feed(url: str, category: str | None = None) -> dict[str, Any]:
         now = datetime.now(timezone.utc).isoformat()
         db.execute(
             _UPDATE_FEED_SQL,
-            (result.title, result.site_url, result.etag,
-             result.last_modified, now, feed_id),
+            (result.title, result.site_url, result.etag, result.last_modified, now, feed_id),
         )
         _insert_entries(feed_id, result.entries)
 
@@ -105,9 +102,7 @@ async def list_feeds(category_id: int | None = None) -> list[dict[str, Any]]:
 
 async def get_feed(feed_id: int) -> dict[str, Any]:
     """Get details for a single feed."""
-    row = db.query_one(
-        _FEED_LIST_SQL + " WHERE f.id = ?", (feed_id,)
-    )
+    row = db.query_one(_FEED_LIST_SQL + " WHERE f.id = ?", (feed_id,))
     if not row:
         raise FeedNotFoundError(feed_id)
     return row
@@ -115,9 +110,7 @@ async def get_feed(feed_id: int) -> dict[str, Any]:
 
 async def delete_feed(feed_id: int) -> str:
     """Remove a feed and all its entries."""
-    existing = db.query_one(
-        "SELECT title, url FROM feeds WHERE id = ?", (feed_id,)
-    )
+    existing = db.query_one("SELECT title, url FROM feeds WHERE id = ?", (feed_id,))
     if not existing:
         raise FeedNotFoundError(feed_id)
     db.execute("DELETE FROM feeds WHERE id = ?", (feed_id,))
@@ -127,9 +120,7 @@ async def delete_feed(feed_id: int) -> str:
 async def fetch_feeds(feed_id: int | None = None) -> str:
     """Fetch new entries for all feeds or a specific feed."""
     if feed_id is not None:
-        existing = db.query_one(
-            "SELECT * FROM feeds WHERE id = ?", (feed_id,)
-        )
+        existing = db.query_one("SELECT * FROM feeds WHERE id = ?", (feed_id,))
         if not existing:
             raise FeedNotFoundError(feed_id)
         feeds_to_fetch = [existing]
@@ -157,14 +148,11 @@ async def fetch_feeds(feed_id: int | None = None) -> str:
         title = result.title if result.title else feed.get("title")
         db.execute(
             _UPDATE_FEED_SQL,
-            (title, result.site_url, result.etag,
-             result.last_modified, now, feed["id"]),
+            (title, result.site_url, result.etag, result.last_modified, now, feed["id"]),
         )
         total_new += _insert_entries(feed["id"], result.entries)
 
-    parts = [
-        f"Fetched {len(feeds_to_fetch)} feed(s): {total_new} new entries"
-    ]
+    parts = [f"Fetched {len(feeds_to_fetch)} feed(s): {total_new} new entries"]
     if errors:
         parts.append(f"Errors ({len(errors)}): " + "; ".join(errors))
     return ". ".join(parts)

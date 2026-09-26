@@ -75,9 +75,7 @@ async def export_opml() -> str:
     ET.SubElement(head, "title").text = "mcp-feed-reader-crunchtools export"
     body = ET.SubElement(opml, "body")
 
-    categories = db.query(
-        "SELECT id, name FROM categories ORDER BY name"
-    )
+    categories = db.query("SELECT id, name FROM categories ORDER BY name")
 
     uncategorized = db.query(
         "SELECT url, title, site_url FROM feeds WHERE category_id IS NULL ORDER BY title"
@@ -115,9 +113,7 @@ async def get_stats() -> dict[str, Any]:
     total_feeds = db.query_one("SELECT COUNT(*) AS count FROM feeds")
     total_entries = db.query_one("SELECT COUNT(*) AS count FROM entries")
     unread_entries = db.query_one("SELECT COUNT(*) AS count FROM entries WHERE is_read = 0")
-    last_fetch = db.query_one(
-        "SELECT MAX(last_fetched) AS last_fetched FROM feeds"
-    )
+    last_fetch = db.query_one("SELECT MAX(last_fetched) AS last_fetched FROM feeds")
 
     per_category = db.query(
         """

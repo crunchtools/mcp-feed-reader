@@ -22,9 +22,7 @@ class Config:
     _api_token: SecretStr | None = None
 
     def __init__(self) -> None:
-        default_db = str(
-            Path.home() / ".local" / "share" / "mcp-feed-reader" / "feeds.db"
-        )
+        default_db = str(Path.home() / ".local" / "share" / "mcp-feed-reader" / "feeds.db")
         self.db_path: str = os.environ.get("FEED_READER_DB", default_db)
 
     def ensure_db_dir(self) -> None:

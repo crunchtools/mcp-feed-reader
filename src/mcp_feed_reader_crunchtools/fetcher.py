@@ -14,10 +14,7 @@ from .errors import FetchError
 
 FETCH_TIMEOUT = 30
 MAX_RESPONSE_SIZE = 10 * 1024 * 1024
-USER_AGENT = (
-    "mcp-feed-reader-crunchtools/0.1.3"
-    " (+https://github.com/crunchtools/mcp-feed-reader)"
-)
+USER_AGENT = "mcp-feed-reader-crunchtools/0.1.3 (+https://github.com/crunchtools/mcp-feed-reader)"
 
 
 async def fetch_feed(
@@ -51,9 +48,7 @@ async def fetch_feed(
     )
 
 
-async def _download(
-    url: str, etag: str | None, last_modified: str | None
-) -> httpx.Response | None:
+async def _download(url: str, etag: str | None, last_modified: str | None) -> httpx.Response | None:
     """Download a feed URL, returning None on 304."""
     headers: dict[str, str] = {"User-Agent": USER_AGENT}
     if etag:
@@ -63,7 +58,9 @@ async def _download(
 
     try:
         async with httpx.AsyncClient(
-            timeout=FETCH_TIMEOUT, follow_redirects=True, max_redirects=5,
+            timeout=FETCH_TIMEOUT,
+            follow_redirects=True,
+            max_redirects=5,
         ) as client:
             response = await client.get(url, headers=headers)
     except httpx.HTTPError as exc:
@@ -82,10 +79,7 @@ def _parse_entry(entry: Any) -> dict[str, Any]:
     """Extract fields from a feedparser entry."""
     entry_content = getattr(entry, "content", None)
     entry_summary = getattr(entry, "summary", None)
-    content = (
-        entry_content[0].get("value", "") if entry_content
-        else entry_summary or ""
-    )
+    content = entry_content[0].get("value", "") if entry_content else entry_summary or ""
 
     published: str | None = None
     for attr in ("published_parsed", "updated_parsed"):
@@ -93,8 +87,12 @@ def _parse_entry(entry: Any) -> dict[str, Any]:
         if parsed_time:
             with contextlib.suppress(TypeError, ValueError):
                 dt = datetime(
-                    parsed_time[0], parsed_time[1], parsed_time[2],
-                    parsed_time[3], parsed_time[4], parsed_time[5],
+                    parsed_time[0],
+                    parsed_time[1],
+                    parsed_time[2],
+                    parsed_time[3],
+                    parsed_time[4],
+                    parsed_time[5],
                     tzinfo=timezone.utc,
                 )
                 published = dt.isoformat()
