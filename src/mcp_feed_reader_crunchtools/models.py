@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Any
+from typing import Annotated, Any
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, BeforeValidator, Field, field_validator, model_validator
 
 MAX_URL_LENGTH = 2048
 MAX_NAME_LENGTH = 200
@@ -27,6 +27,17 @@ def unset_if_not_id(value: Any) -> Any:
     if isinstance(value, int) and not isinstance(value, bool) and value <= 0:
         return None
     return value
+
+
+# Tool-signature ID types (constitution mcp-server 1.5.0). The schema publishes
+# the valid domain, ``minimum: 1``, so a gateway can tell an out-of-domain
+# value from a real one. An optional ID still maps a non-positive value to
+# None BEFORE the constraint runs, so a client that sends ``0`` directly is
+# served, not refused. A required ID keeps rejecting it.
+RequiredId = Annotated[int, Field(ge=1)]
+# The bound sits on the int branch, not the union: on the union, Pydantic
+# publishes a bare ``ge`` that no JSON Schema reader understands.
+OptionalId = Annotated[RequiredId | None, BeforeValidator(unset_if_not_id)]
 
 
 class FeedInput(BaseModel, extra="forbid"):

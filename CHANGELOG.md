@@ -8,6 +8,20 @@ Entries prior to 2026-09-19 are back-filled from GitHub Release notes (RT #1484)
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-09-26
+
+### Changed
+- Every ID parameter publishes `minimum: 1` in its tool schema (constitution
+  mcp-server 1.5.0), so a gateway such as Trentina can tell `feed_id: 0`
+  from a real ID and drop it before forwarding. An optional ID still maps a
+  non-positive value to "not given" before the bound applies, so a direct
+  `feed_id: 0` is served as before. A required ID of `0` is refused.
+- Locked fastmcp moves from 3.1.0 to 4.0.10, the version the image already
+  installs, so the tests exercise what ships.
+
+### Fixed
+- The image's `version` label said 0.2.1.
+
 ## [0.2.2] - 2026-09-26
 
 ### Fixed
