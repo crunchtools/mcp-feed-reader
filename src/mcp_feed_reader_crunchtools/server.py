@@ -6,7 +6,7 @@ from typing import Any
 
 from fastmcp import FastMCP
 
-from .models import unset_if_not_id
+from .models import OptionalId, RequiredId, unset_if_not_id
 from .tools import (
     add_feed,
     create_category,
@@ -29,7 +29,7 @@ from .tools import (
 
 mcp = FastMCP(
     "mcp-feed-reader-crunchtools",
-    version="0.2.2",
+    version="0.2.3",
     instructions=(
         "RSS/Atom feed reader MCP server with SQLite backend. "
         "Use add_feed to subscribe, fetch_feeds to pull new content, "
@@ -51,7 +51,7 @@ async def add_feed_tool(url: str, category: str | None = None) -> dict[str, Any]
 
 
 @mcp.tool()
-async def list_feeds_tool(category_id: int | None = None) -> list[dict[str, Any]]:
+async def list_feeds_tool(category_id: OptionalId = None) -> list[dict[str, Any]]:
     """List all feeds with unread counts.
 
     Args:
@@ -61,7 +61,7 @@ async def list_feeds_tool(category_id: int | None = None) -> list[dict[str, Any]
 
 
 @mcp.tool()
-async def get_feed_tool(feed_id: int) -> dict[str, Any]:
+async def get_feed_tool(feed_id: RequiredId) -> dict[str, Any]:
     """Get details for a single feed including entry counts.
 
     Args:
@@ -71,7 +71,7 @@ async def get_feed_tool(feed_id: int) -> dict[str, Any]:
 
 
 @mcp.tool()
-async def delete_feed_tool(feed_id: int) -> str:
+async def delete_feed_tool(feed_id: RequiredId) -> str:
     """Remove a feed and all its entries.
 
     Args:
@@ -81,7 +81,7 @@ async def delete_feed_tool(feed_id: int) -> str:
 
 
 @mcp.tool()
-async def refresh_feeds_tool(feed_id: int | None = None) -> str:
+async def refresh_feeds_tool(feed_id: OptionalId = None) -> str:
     """Crawl feed sources over the network for new content. Slow — takes 30-60s for all feeds.
 
     Prefer the systemd timer for background updates. Use list_entries to read cached content.
@@ -94,8 +94,8 @@ async def refresh_feeds_tool(feed_id: int | None = None) -> str:
 
 @mcp.tool()
 async def list_entries_tool(
-    feed_id: int | None = None,
-    category_id: int | None = None,
+    feed_id: OptionalId = None,
+    category_id: OptionalId = None,
     unread_only: bool = True,
     limit: int = 50,
     offset: int = 0,
@@ -135,7 +135,7 @@ async def list_entries_tool(
 
 
 @mcp.tool()
-async def read_entry_tool(entry_id: int) -> dict[str, Any]:
+async def read_entry_tool(entry_id: RequiredId) -> dict[str, Any]:
     """Get full content of an entry (auto-marks as read).
 
     Args:
@@ -146,8 +146,8 @@ async def read_entry_tool(entry_id: int) -> dict[str, Any]:
 
 @mcp.tool()
 async def mark_read_tool(
-    entry_id: int | None = None,
-    feed_id: int | None = None,
+    entry_id: OptionalId = None,
+    feed_id: OptionalId = None,
     all_entries: bool = False,
 ) -> str:
     """Mark entries as read.
@@ -161,7 +161,7 @@ async def mark_read_tool(
 
 
 @mcp.tool()
-async def mark_unread_tool(entry_id: int) -> str:
+async def mark_unread_tool(entry_id: RequiredId) -> str:
     """Mark an entry as unread.
 
     Args:
@@ -198,7 +198,7 @@ async def create_category_tool(name: str) -> dict[str, Any]:
 
 
 @mcp.tool()
-async def rename_category_tool(category_id: int, name: str) -> dict[str, Any]:
+async def rename_category_tool(category_id: RequiredId, name: str) -> dict[str, Any]:
     """Rename a category.
 
     Args:
@@ -209,7 +209,7 @@ async def rename_category_tool(category_id: int, name: str) -> dict[str, Any]:
 
 
 @mcp.tool()
-async def delete_category_tool(category_id: int) -> str:
+async def delete_category_tool(category_id: RequiredId) -> str:
     """Delete a category. Feeds in this category become uncategorized.
 
     Args:

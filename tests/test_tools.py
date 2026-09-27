@@ -5,10 +5,11 @@ from __future__ import annotations
 import tempfile
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from fastmcp import Client
 
 from mcp_feed_reader_crunchtools import database as db_mod
 
@@ -74,6 +75,47 @@ class TestToolCount:
     async def test_tool_count(self) -> None:
         tools = await mcp.list_tools()
         assert len(tools) == EXPECTED_TOOL_COUNT
+
+
+class TestIdSchema:
+    """IDs publish ``minimum: 1`` (constitution mcp-server 1.5.0, RT #1505).
+
+    The schema is what lets a gateway tell ``feed_id: 0`` from a real ID; the
+    before-validator is what still serves a client that sends it directly.
+    """
+
+    @staticmethod
+    def _int_branch(prop: dict[str, Any]) -> dict[str, Any]:
+        return next((b for b in prop.get("anyOf", []) if b.get("type") == "integer"), prop)
+
+    @pytest.mark.asyncio
+    async def test_every_id_parameter_declares_minimum_one(self) -> None:
+        ids = [
+            (tool.name, name, prop)
+            for tool in await mcp.list_tools()
+            for name, prop in tool.parameters["properties"].items()
+            if name.endswith("_id")
+        ]
+        assert ids
+        for tool_name, name, prop in ids:
+            assert self._int_branch(prop).get("minimum") == 1, (tool_name, name)
+            assert "ge" not in prop, (tool_name, name)
+
+    @pytest.mark.asyncio
+    async def test_an_optional_zero_id_is_served_as_unset(
+        self, in_memory_db: sqlite3.Connection
+    ) -> None:
+        async with Client(mcp) as client:
+            result = await client.call_tool(
+                "list_entries_tool", {"feed_id": 0, "category_id": -1}, raise_on_error=False
+            )
+        assert not result.is_error
+
+    @pytest.mark.asyncio
+    async def test_a_required_zero_id_is_refused(self) -> None:
+        async with Client(mcp) as client:
+            result = await client.call_tool("get_feed_tool", {"feed_id": 0}, raise_on_error=False)
+        assert result.is_error
 
 
 class TestCategoryTools:
