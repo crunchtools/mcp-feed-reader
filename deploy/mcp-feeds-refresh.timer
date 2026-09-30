@@ -1,0 +1,16 @@
+[Unit]
+Description=RSS/Atom feed crawl for mcp-feeds
+
+[Timer]
+# Hourly for general freshness...
+OnCalendar=hourly
+# ...plus one just before the 06:00 daily briefing. The briefing filters entries
+# on COALESCE(published, created_at), i.e. publication time, so anything
+# published after the last pre-06:00 crawl is invisible to that day gather AND
+# already older than the next day window start -- it is lost permanently.
+OnCalendar=*-*-* 05:45:00
+RandomizedDelaySec=120
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import contextlib
 from datetime import datetime, timezone
 from typing import Any
@@ -18,6 +19,14 @@ MAX_RESPONSE_SIZE = 10 * 1024 * 1024
 USER_AGENT = (
     f"mcp-feed-reader-crunchtools/{__version__} (+https://github.com/crunchtools/mcp-feed-reader)"
 )
+
+# Reddit throttles per exit IP and returns 429 for a few seconds at a time;
+# gateways and CDNs return 5xx just as briefly. Both usually clear on a second
+# look, and a crawl that gives up on the first one silently loses a day of
+# entries -- a feed's history is not re-fetchable once it rolls off.
+TRANSIENT_STATUSES = frozenset({429, 500, 502, 503, 504})
+MAX_ATTEMPTS = 3
+RETRY_BACKOFF_SECONDS = 2.0
 
 
 async def fetch_feed(
@@ -52,30 +61,50 @@ async def fetch_feed(
 
 
 async def _download(url: str, etag: str | None, last_modified: str | None) -> httpx.Response | None:
-    """Download a feed URL, returning None on 304."""
+    """Download a feed URL, returning None on 304.
+
+    A transient answer (connection error, rate limit, gateway 5xx) is retried
+    up to MAX_ATTEMPTS times with exponential backoff. A definite one -- any
+    other status -- is acted on immediately; retrying a 404 or a 401 only
+    slows the crawl down.
+    """
     headers: dict[str, str] = {"User-Agent": USER_AGENT}
     if etag:
         headers["If-None-Match"] = etag
     if last_modified:
         headers["If-Modified-Since"] = last_modified
 
-    try:
-        async with httpx.AsyncClient(
-            timeout=FETCH_TIMEOUT,
-            follow_redirects=True,
-            max_redirects=5,
-        ) as client:
-            response = await client.get(url, headers=headers)
-    except httpx.HTTPError as exc:
-        raise FetchError(url, str(exc)) from exc
+    last_error = "no attempt made"
+    last_exc: httpx.HTTPError | None = None
+    for attempt in range(MAX_ATTEMPTS):
+        if attempt:
+            await asyncio.sleep(RETRY_BACKOFF_SECONDS * 2 ** (attempt - 1))
 
-    if response.status_code == 304:
-        return None
-    if response.status_code != 200:
-        raise FetchError(url, f"HTTP {response.status_code}")
-    if len(response.content) > MAX_RESPONSE_SIZE:
-        raise FetchError(url, "Response exceeds 10MB limit")
-    return response
+        try:
+            async with httpx.AsyncClient(
+                timeout=FETCH_TIMEOUT,
+                follow_redirects=True,
+                max_redirects=5,
+            ) as client:
+                response = await client.get(url, headers=headers)
+        except httpx.HTTPError as exc:
+            last_error, last_exc = str(exc) or type(exc).__name__, exc
+            continue
+
+        if response.status_code in TRANSIENT_STATUSES:
+            last_error = f"HTTP {response.status_code}"
+            continue
+        if response.status_code == 304:
+            return None
+        if response.status_code != 200:
+            raise FetchError(url, f"HTTP {response.status_code}")
+        if len(response.content) > MAX_RESPONSE_SIZE:
+            raise FetchError(url, "Response exceeds 10MB limit")
+        return response
+
+    # from last_exc keeps the underlying transport error in the traceback; a
+    # run of rate limits has no such cause, and None says so honestly.
+    raise FetchError(url, last_error) from last_exc
 
 
 def _parse_entry(entry: Any) -> dict[str, Any]:

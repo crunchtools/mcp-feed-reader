@@ -26,6 +26,7 @@ podman run -v feedreader-data:/data quay.io/crunchtools/mcp-feed-reader
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `FEED_READER_DB` | `~/.local/share/mcp-feed-reader/feeds.db` | SQLite database path |
+| `HTTP_PROXY` / `HTTPS_PROXY` / `NO_PROXY` | (none) | Standard httpx proxy variables, honoured for every feed fetch. Useful when a publisher rate-limits your egress IP — Reddit returns 429 to datacentre ranges regardless of User-Agent |
 
 ## Tools (17)
 
@@ -56,10 +57,42 @@ podman run -v feedreader-data:/data quay.io/crunchtools/mcp-feed-reader
 
 ## Background Fetching
 
+Nothing in the server crawls on its own. `list_entries_tool` and friends read a
+cache; if no one calls `--fetch`, that cache goes stale and every reader sees an
+empty feed with no error anywhere. **A deployment without a crawl trigger is a
+broken deployment** — this bit the daily briefing, which reported "no news" for
+days while all 61 feeds sat unfetched.
+
 ```bash
 # Fetch all feeds via CLI
 mcp-feed-reader-crunchtools --fetch
 ```
+
+### systemd timer (recommended)
+
+`deploy/` ships the two units used in production. Copy them to
+`/etc/systemd/system/`, adjust the container name in the service if yours
+differs, then:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now mcp-feeds-refresh.timer
+```
+
+The service runs `--fetch` *inside* the running container
+(`podman exec`), so the database keeps the SELinux category of the process that
+owns it. Do not bind-mount the data directory into a second container with
+`:Z` to run the crawl — that relabels the volume and locks the live server out.
+
+The timer fires hourly, plus once at 05:45. That second entry is not
+redundant: consumers window entries on publication time, so an entry published
+between the last crawl and a 06:00 report is missing from that report *and*
+already older than the next day's window start — it is lost for good. Any
+consumer on a fixed schedule wants a crawl shortly before it.
+
+Feeds are fetched conditionally (ETag / `If-Modified-Since`), and a rate limit,
+gateway 5xx, or dropped connection is retried three times with exponential
+backoff before the feed is recorded as failed.
 
 ## License
 
