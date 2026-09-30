@@ -10,7 +10,7 @@ Type=oneshot
 # category. Never bind-mount /srv/mcp-feeds.crunchtools.com/data elsewhere
 # with :Z -- that relabels it and locks the server out.
 ExecStart=/usr/bin/podman exec mcp-feeds python -m mcp_feed_reader_crunchtools --fetch
-# Worst case is every feed timing out three times with backoff between
-# attempts: 61 feeds is far more than this allows, but a crawl that long is
-# already a failure worth killing.
+# Worst case is every feed timing out on all three attempts with backoff in
+# between: dozens of feeds is far more than this allows, but a crawl that long
+# is already a failure worth killing.
 TimeoutStartSec=900

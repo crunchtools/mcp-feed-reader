@@ -64,9 +64,9 @@ async def _download(url: str, etag: str | None, last_modified: str | None) -> ht
     """Download a feed URL, returning None on 304.
 
     A transient answer (connection error, rate limit, gateway 5xx) is retried
-    up to MAX_ATTEMPTS times with exponential backoff. A definite one -- any
-    other status -- is acted on immediately; retrying a 404 or a 401 only
-    slows the crawl down.
+    with exponential backoff, for MAX_ATTEMPTS requests in all. A definite one
+    -- any other status -- is acted on immediately; retrying a 404 or a 401
+    only slows the crawl down.
     """
     headers: dict[str, str] = {"User-Agent": USER_AGENT}
     if etag:

@@ -20,9 +20,9 @@ Entries prior to 2026-09-19 are back-filled from GitHub Release notes (RT #1484)
   time permanently loses anything published between the last crawl and its
   own run.
 - A fetch that hits a rate limit (429), a gateway 5xx, or a dropped connection
-  is retried up to three times with exponential backoff. A definite answer —
-  404, 401, 304 — is still acted on at once. Reddit throttles per exit IP for
-  a few seconds at a time, which used to cost a feed its whole crawl.
+  is retried with exponential backoff, up to three attempts in all. A definite
+  answer — 404, 401, 304 — is still acted on at once. Reddit throttles per exit
+  IP for a few seconds at a time, which used to cost a feed its whole crawl.
 
 ### Changed
 - Documented `HTTP_PROXY`/`HTTPS_PROXY`/`NO_PROXY`, which httpx already

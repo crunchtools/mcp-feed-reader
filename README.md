@@ -90,9 +90,9 @@ between the last crawl and a 06:00 report is missing from that report *and*
 already older than the next day's window start — it is lost for good. Any
 consumer on a fixed schedule wants a crawl shortly before it.
 
-Feeds are fetched conditionally (ETag / `If-Modified-Since`), and a rate limit,
-gateway 5xx, or dropped connection is retried three times with exponential
-backoff before the feed is recorded as failed.
+Feeds are fetched conditionally (ETag / `If-Modified-Since`). A rate limit,
+gateway 5xx, or dropped connection is retried with exponential backoff, up to
+three attempts in all, before the feed is recorded as failed.
 
 ## License
 
