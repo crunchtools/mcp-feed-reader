@@ -8,6 +8,27 @@ Entries prior to 2026-09-19 are back-filled from GitHub Release notes (RT #1484)
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-09-30
+
+### Added
+- `deploy/mcp-feeds-refresh.{service,timer}` — the systemd units that crawl
+  feeds, with the README section explaining why a deployment without them is
+  broken. Nothing in the server crawls on its own, and a stale cache reports
+  as an empty feed rather than as an error: the daily briefing ran for days
+  on 61 unfetched feeds with no failure anywhere to notice. The timer fires
+  hourly plus once at 05:45, because a consumer that windows on publication
+  time permanently loses anything published between the last crawl and its
+  own run.
+- A fetch that hits a rate limit (429), a gateway 5xx, or a dropped connection
+  is retried with exponential backoff, up to three attempts in all. A definite
+  answer — 404, 401, 304 — is still acted on at once. Reddit throttles per exit
+  IP for a few seconds at a time, which used to cost a feed its whole crawl.
+
+### Changed
+- Documented `HTTP_PROXY`/`HTTPS_PROXY`/`NO_PROXY`, which httpx already
+  honoured. They are the answer to a publisher that rate-limits your egress
+  IP whatever User-Agent you send.
+
 ## [0.2.3] - 2026-09-26
 
 ### Changed
