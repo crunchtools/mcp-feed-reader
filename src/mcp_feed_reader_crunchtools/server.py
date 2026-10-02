@@ -29,7 +29,7 @@ from .tools import (
 
 mcp = FastMCP(
     "mcp-feed-reader-crunchtools",
-    version="0.2.3",
+    version="0.4.0",
     instructions=(
         "RSS/Atom feed reader MCP server with SQLite backend. "
         "Use add_feed to subscribe, fetch_feeds to pull new content, "
