@@ -38,6 +38,11 @@ mcp = FastMCP(
     ),
 )
 
+# Published on every tool that changes nothing. A gateway reads it to decide
+# whether an invalid optional may be dropped or must refuse the call
+# (crunchtools/mcp-trentina#335). read_entry is not one: it marks the entry read.
+READ_ONLY = {"readOnlyHint": True}
+
 
 @mcp.tool()
 async def add_feed_tool(url: str, category: str | None = None) -> dict[str, Any]:
@@ -50,7 +55,7 @@ async def add_feed_tool(url: str, category: str | None = None) -> dict[str, Any]
     return await add_feed(url, category)
 
 
-@mcp.tool()
+@mcp.tool(annotations=READ_ONLY)
 async def list_feeds_tool(category_id: OptionalId = None) -> list[dict[str, Any]]:
     """List all feeds with unread counts.
 
@@ -60,7 +65,7 @@ async def list_feeds_tool(category_id: OptionalId = None) -> list[dict[str, Any]
     return await list_feeds(category_id)
 
 
-@mcp.tool()
+@mcp.tool(annotations=READ_ONLY)
 async def get_feed_tool(feed_id: RequiredId) -> dict[str, Any]:
     """Get details for a single feed including entry counts.
 
@@ -92,7 +97,7 @@ async def refresh_feeds_tool(feed_id: OptionalId = None) -> str:
     return await fetch_feeds(unset_if_not_id(feed_id))
 
 
-@mcp.tool()
+@mcp.tool(annotations=READ_ONLY)
 async def list_entries_tool(
     feed_id: OptionalId = None,
     category_id: OptionalId = None,
@@ -170,7 +175,7 @@ async def mark_unread_tool(entry_id: RequiredId) -> str:
     return await mark_unread(entry_id)
 
 
-@mcp.tool()
+@mcp.tool(annotations=READ_ONLY)
 async def search_entries_tool(query: str, limit: int = 50) -> list[dict[str, Any]]:
     """Full-text search across entry titles and content.
 
@@ -181,7 +186,7 @@ async def search_entries_tool(query: str, limit: int = 50) -> list[dict[str, Any
     return await search_entries(query, limit)
 
 
-@mcp.tool()
+@mcp.tool(annotations=READ_ONLY)
 async def list_categories_tool() -> list[dict[str, Any]]:
     """List all categories with feed counts."""
     return await list_categories()
@@ -228,13 +233,13 @@ async def import_opml_tool(file_path: str) -> str:
     return await import_opml(file_path)
 
 
-@mcp.tool()
+@mcp.tool(annotations=READ_ONLY)
 async def export_opml_tool() -> str:
     """Export all feeds as OPML XML string."""
     return await export_opml()
 
 
-@mcp.tool()
+@mcp.tool(annotations=READ_ONLY)
 async def get_stats_tool() -> dict[str, Any]:
     """Get dashboard stats: total feeds, unread count, entries per category."""
     return await get_stats()

@@ -77,6 +77,32 @@ class TestToolCount:
         assert len(tools) == EXPECTED_TOOL_COUNT
 
 
+class TestReadOnlyAnnotation:
+    """Tools that change nothing say so (crunchtools/mcp-trentina#335)."""
+
+    READ_ONLY = frozenset(
+        {
+            "list_feeds_tool",
+            "get_feed_tool",
+            "list_entries_tool",
+            "search_entries_tool",
+            "list_categories_tool",
+            "export_opml_tool",
+            "get_stats_tool",
+        }
+    )
+
+    @pytest.mark.asyncio
+    async def test_exactly_the_reads_are_annotated(self) -> None:
+        """read_entry marks the entry read, so it is not among them."""
+        annotated = {
+            tool.name
+            for tool in await mcp.list_tools()
+            if tool.annotations is not None and tool.annotations.readOnlyHint is True
+        }
+        assert annotated == self.READ_ONLY
+
+
 class TestIdSchema:
     """IDs publish ``minimum: 1`` (constitution mcp-server 1.5.0, RT #1505).
 

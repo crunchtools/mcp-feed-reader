@@ -8,6 +8,17 @@ Entries prior to 2026-09-19 are back-filled from GitHub Release notes (RT #1484)
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-02
+
+### Added
+- The seven tools that change nothing publish `readOnlyHint: true`:
+  `list_feeds`, `get_feed`, `list_entries`, `search_entries`,
+  `list_categories`, `export_opml` and `get_stats`. A gateway uses the
+  annotation to decide whether an invalid optional argument, such as the
+  `feed_id: 0` some clients send as a placeholder, may be dropped or must
+  refuse the call (crunchtools/mcp-trentina#335). `read_entry` is not
+  annotated, because it marks the entry read.
+
 ## [0.3.0] - 2026-09-30
 
 ### Added
