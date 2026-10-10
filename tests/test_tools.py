@@ -77,30 +77,109 @@ class TestToolCount:
         assert len(tools) == EXPECTED_TOOL_COUNT
 
 
-class TestReadOnlyAnnotation:
-    """Tools that change nothing say so (crunchtools/mcp-trentina#335)."""
+READ_ONLY = frozenset(
+    {
+        "list_feeds_tool",
+        "get_feed_tool",
+        "list_entries_tool",
+        "search_entries_tool",
+        "list_categories_tool",
+        "export_opml_tool",
+        "get_stats_tool",
+    }
+)
+WRITES = frozenset(
+    {
+        "add_feed_tool",
+        "delete_feed_tool",
+        "refresh_feeds_tool",
+        "read_entry_tool",
+        "mark_read_tool",
+        "mark_unread_tool",
+        "create_category_tool",
+        "rename_category_tool",
+        "delete_category_tool",
+        "import_opml_tool",
+    }
+)
 
-    READ_ONLY = frozenset(
-        {
-            "list_feeds_tool",
-            "get_feed_tool",
-            "list_entries_tool",
-            "search_entries_tool",
-            "list_categories_tool",
-            "export_opml_tool",
-            "get_stats_tool",
-        }
-    )
+# Arguments that satisfy each read-only tool's required parameters.
+READ_ONLY_CALLS: dict[str, dict[str, Any]] = {
+    "list_feeds_tool": {},
+    "get_feed_tool": {"feed_id": 1},
+    "list_entries_tool": {"feed_id": 1, "unread_only": False, "since_days": 366},
+    "search_entries_tool": {"query": "post"},
+    "list_categories_tool": {},
+    "export_opml_tool": {},
+    "get_stats_tool": {},
+}
+
+
+class TestReadOnlyAnnotation:
+    """Every registered tool is classified, and the reads really only read.
+
+    A gateway drops an invalid optional argument only on a tool publishing
+    ``readOnlyHint``, and a client may run one without asking
+    (crunchtools/constitution#35).
+    """
+
+    @pytest.fixture
+    async def query_only_db(self, in_memory_db: sqlite3.Connection) -> sqlite3.Connection:
+        """A seeded database whose connection then refuses every write."""
+        with patch(
+            "mcp_feed_reader_crunchtools.tools.feeds.fetch_feed",
+            new_callable=AsyncMock,
+            return_value=_mock_fetch_result(),
+        ):
+            await add_feed("https://example.com/feed.xml", "Tech")
+        in_memory_db.execute("PRAGMA query_only = ON")
+        return in_memory_db
 
     @pytest.mark.asyncio
-    async def test_exactly_the_reads_are_annotated(self) -> None:
-        """read_entry marks the entry read, so it is not among them."""
+    async def test_every_tool_is_classified(self) -> None:
+        """read_entry marks the entry read, so it is a write."""
+        tools = await mcp.list_tools()
+        assert READ_ONLY.isdisjoint(WRITES)
+        assert {tool.name for tool in tools} == READ_ONLY | WRITES
         annotated = {
             tool.name
-            for tool in await mcp.list_tools()
-            if tool.annotations is not None and tool.annotations.readOnlyHint is True
+            for tool in tools
+            if tool.annotations is not None
+            and tool.annotations.model_dump(by_alias=True).get("readOnlyHint") is True
         }
-        assert annotated == self.READ_ONLY
+        assert annotated == READ_ONLY
+
+    def test_every_read_only_tool_has_call_arguments(self) -> None:
+        assert set(READ_ONLY_CALLS) == READ_ONLY
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("name", sorted(READ_ONLY))
+    async def test_read_only_tool_writes_nothing(
+        self, name: str, query_only_db: sqlite3.Connection
+    ) -> None:
+        """The backend is SQLite, so a write is a statement ``query_only`` refuses.
+
+        The other effect a tool here can have is a feed download, which only
+        the tools that store its result start.
+        """
+        with patch(
+            "mcp_feed_reader_crunchtools.tools.feeds.fetch_feed", new_callable=AsyncMock
+        ) as fetch:
+            async with Client(mcp) as client:
+                result = await client.call_tool(name, READ_ONLY_CALLS[name], raise_on_error=False)
+        assert not result.is_error, result.content
+        fetch.assert_not_awaited()
+        assert not query_only_db.in_transaction
+
+    @pytest.mark.asyncio
+    async def test_query_only_refuses_a_write(self, query_only_db: sqlite3.Connection) -> None:
+        """Shows the guard can fail: read_entry's UPDATE is refused under it."""
+        async with Client(mcp) as client:
+            result = await client.call_tool(
+                "read_entry_tool", {"entry_id": 1}, raise_on_error=False
+            )
+        assert result.is_error
+        assert "readonly" in str(result.content)
 
 
 class TestIdSchema:

@@ -8,8 +8,21 @@ Entries prior to 2026-09-19 are back-filled from GitHub Release notes (RT #1484)
 
 ## [Unreleased]
 
-### Changed
+## [0.4.1] - 2026-10-10
 
+### Added
+- Tests pin every registered tool into `READ_ONLY` or `WRITES` and fail when a
+  tool is in neither, so a new tool has to be classified before it ships
+  (crunchtools/constitution#35). The seven annotations from 0.4.0 were
+  re-audited against the code and are unchanged.
+- A second test calls each read-only tool through the registry with the SQLite
+  connection set to `PRAGMA query_only = ON`, and checks that none of them
+  starts a feed download. `read_entry` run the same way is refused, which
+  shows the guard catches a write.
+
+### Changed
+- Inherits constitution v1.22.0; the workflow pins and the pre-commit hook rev
+  move with it.
 - Constitution is now a v1.18.0 manifest: it holds only what is specific to
   this repo; fleet and profile rules apply by reference.
 - Constitution validation is pinned to the inherited release via
