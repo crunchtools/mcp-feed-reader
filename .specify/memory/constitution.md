@@ -1,10 +1,10 @@
 # mcp-feed-reader-crunchtools Constitution
 
-> **Version:** 1.1.0
+> **Version:** 1.1.1
 > **Ratified:** 2026-03-07
-> **Amended:** 2026-10-02
+> **Amended:** 2026-10-10
 > **Status:** Active
-> **Inherits:** [crunchtools/constitution](https://github.com/crunchtools/constitution) v1.21.0
+> **Inherits:** [crunchtools/constitution](https://github.com/crunchtools/constitution) v1.22.0
 > **Profile:** MCP Server
 
 This file holds what is specific to mcp-feed-reader. The fleet rules and the
@@ -55,7 +55,11 @@ once at 05:45, so consumers that window entries on publication time for a
 
 Instead of mocked HTTP, tool tests run against a fresh `:memory:` SQLite
 database per test, seeded as needed, and call the tool function directly
-rather than the `_tool` wrapper. Test classes: `TestFeedTools`,
+rather than the `_tool` wrapper. Two classes go through the registered tool
+instead, because what they check exists only there: `TestIdSchema` (the
+published schema and its before-validators) and `TestReadOnlyAnnotation`
+(the `readOnlyHint` partition, and each read-only tool run with the
+connection set to `PRAGMA query_only = ON`). Test classes: `TestFeedTools`,
 `TestEntryTools`, `TestCategoryTools`, `TestImportExportTools`,
 `TestErrorHandling`. `test_tool_count` is updated whenever a tool is added or
 removed.
@@ -78,3 +82,4 @@ removed.
 | 1.0.1 | 2026-03-16 | Add Section VI (Container Conventions); renumber VI-VIII to VII-IX |
 | 1.0.2 | 2026-09-25 | Inherit constitution v1.17.0 (Gatehouse gates) |
 | 1.1.0 | 2026-10-02 | Manifest under constitution v1.18.0: profile restatement removed, feed-reader specifics kept; fetch and filesystem rules corrected to match the code |
+| 1.1.1 | 2026-10-10 | Inherit constitution v1.22.0; name the two test classes that call registered tools |
