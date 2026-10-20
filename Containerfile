@@ -8,7 +8,7 @@
 #   podman run -v feedreader-data:/data quay.io/crunchtools/mcp-feed-reader
 
 # Stage 1: Install dependencies (builder has /bin/sh)
-FROM quay.io/hummingbird/python:latest-builder AS pip-builder
+FROM quay.io/hummingbird/python:3.14-builder AS pip-builder
 
 USER 0
 WORKDIR /app
@@ -19,7 +19,7 @@ COPY src/ ./src/
 RUN pip install --no-cache-dir --prefix=/usr .
 
 # Stage 2: Distroless runtime
-FROM quay.io/hummingbird/python:latest
+FROM quay.io/hummingbird/python:3.14
 
 LABEL name="mcp-feed-reader-crunchtools" \
       version="0.4.1" \
