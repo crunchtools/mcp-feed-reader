@@ -22,7 +22,7 @@ RUN pip install --no-cache-dir --prefix=/usr .
 FROM quay.io/hummingbird/python:3.14
 
 LABEL name="mcp-feed-reader-crunchtools" \
-      version="0.4.1" \
+      version="0.5.0" \
       summary="Secure MCP server for RSS/Atom feed reading" \
       description="A self-contained RSS/Atom feed reader MCP server with SQLite backend" \
       maintainer="crunchtools.com" \
