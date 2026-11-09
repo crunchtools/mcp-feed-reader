@@ -274,3 +274,23 @@ class TestConditionalHeaders:
         assert seen[0]["If-None-Match"] == '"abc"'
         assert seen[0]["If-Modified-Since"] == "Mon, 29 Sep 2026 12:00:00 GMT"
         assert seen[0]["User-Agent"] == fetcher.USER_AGENT
+
+    async def test_an_oversize_transient_answer_is_still_retried(
+        self, transport: Callable[..., list[str]], backoff: list[float]
+    ) -> None:
+        """A 503 page too big to read is still a 503, not a permanent failure.
+
+        Reading the body before looking at the status would raise `FetchError`
+        out of the retry loop, which `except httpx.HTTPError` does not catch.
+        """
+        huge = "x" * (fetcher.MAX_RESPONSE_SIZE + 1)
+        log = transport(
+            httpx.Response(503, headers={"content-type": "text/html"}, text=huge),
+            httpx.Response(200, headers={"content-type": "application/rss+xml"}, text=FEED_XML),
+        )
+
+        result = await fetcher.fetch_feed(URL)
+
+        assert result is not None
+        assert result.title == "Example Feed"
+        assert len(log) == 2

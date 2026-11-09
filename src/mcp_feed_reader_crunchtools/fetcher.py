@@ -124,16 +124,17 @@ async def _read_capped(response: httpx.Response, url: str) -> bytes:
             f"{_where(response)} declared {declared} bytes, over the "
             f"{MAX_RESPONSE_SIZE} byte limit",
         )
-    chunks: list[bytes] = []
-    size = 0
+    # One growing buffer, not a list of chunks plus a full-size join: near the
+    # ceiling the join holds both copies at once, which doubles the peak this
+    # limit exists to bound.
+    body = bytearray()
     async for chunk in response.aiter_bytes():
-        size += len(chunk)
-        if size > MAX_RESPONSE_SIZE:
+        body += chunk
+        if len(body) > MAX_RESPONSE_SIZE:
             raise FetchError(
                 url, f"{_where(response)} sent over the {MAX_RESPONSE_SIZE} byte limit"
             )
-        chunks.append(chunk)
-    return b"".join(chunks)
+    return bytes(body)
 
 
 async def _download(
@@ -167,14 +168,22 @@ async def _download(
                 request = client.build_request("GET", url, headers=headers)
                 response = await client.send(request, stream=True)
                 try:
-                    body = await _read_capped(response, url)
+                    # The status decides whether the body is read at all. A
+                    # transient answer is going to be retried, so its body is
+                    # bandwidth spent on a message the next attempt replaces --
+                    # and reading it first would let an oversized 503 page raise
+                    # FetchError out of the retry loop, which `except
+                    # httpx.HTTPError` below does not catch. That would turn a
+                    # rate limit into a permanent failure.
+                    transient = response.status_code in TRANSIENT_STATUSES
+                    body = b"" if transient else await _read_capped(response, url)
                 finally:
                     await response.aclose()
         except httpx.HTTPError as exc:
             last_error, last_exc = str(exc) or type(exc).__name__, exc
             continue
 
-        if response.status_code in TRANSIENT_STATUSES:
+        if transient:
             last_error = _where(response)
             continue
         if response.status_code == 304:
