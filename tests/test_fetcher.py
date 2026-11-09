@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import tracemalloc
 from typing import TYPE_CHECKING, Any
 
 import httpx
@@ -188,15 +189,22 @@ class TestRetry:
     async def test_one_oversized_chunk_is_refused_before_it_is_copied(
         self, transport: Callable[..., list[str]], backoff: list[float]
     ) -> None:
-        """`aiter_bytes()` promises nothing about chunk size: one can be the body.
+        """Refused BEFORE the copy, which is the whole point of the change.
 
-        The previous version appended the chunk and then measured, so exactly
-        the response being refused had already been copied in. With one chunk
-        carrying the whole body, "one chunk over" is not a small overshoot.
+        A control-flow assertion cannot see this: append-then-measure raises
+        the same `FetchError` for the same body. What differs is that it has
+        already copied the chunk in, so the difference is an allocation --
+        measured here rather than asserted in prose. Checked against the old
+        order while writing it: that implementation peaks at the chunk size.
+
+        One chunk, four times the cap, because `aiter_bytes()` promises nothing
+        about chunk size and that is what makes "one chunk over" unbounded
+        rather than a small overshoot.
         """
+        chunk = b"y" * (fetcher.MAX_RESPONSE_SIZE * 4)
 
         async def one_huge_chunk() -> AsyncIterator[bytes]:
-            yield b"y" * (fetcher.MAX_RESPONSE_SIZE + 1)
+            yield chunk
 
         answer = httpx.Response(
             200,
@@ -206,14 +214,24 @@ class TestRetry:
         assert "content-length" not in answer.headers
         transport(answer)
 
-        with pytest.raises(FetchError) as caught:
-            await fetcher.fetch_feed(URL)
+        # The chunk is built above, outside the traced window, so what is
+        # measured is only what the read itself allocates.
+        tracemalloc.start()
+        try:
+            with pytest.raises(FetchError) as caught:
+                await fetcher.fetch_feed(URL)
+            _, peak = tracemalloc.get_traced_memory()
+        finally:
+            tracemalloc.stop()
 
         assert str(caught.value) == (
             "Failed to fetch https://example.com/feed.xml: "
             "GET https://example.com/feed.xml (HTTP 200, application/rss+xml) "
             f"sent over the {fetcher.MAX_RESPONSE_SIZE} byte limit"
         )
+        # Nothing the size of the chunk was ever held: the limit refused it
+        # before the buffer grew. Appending first peaks at 40MB here.
+        assert peak < fetcher.MAX_RESPONSE_SIZE
 
     async def test_a_body_exactly_at_the_cap_is_accepted(
         self, transport: Callable[..., list[str]], backoff: list[float]
