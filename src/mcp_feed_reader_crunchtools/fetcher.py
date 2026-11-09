@@ -129,11 +129,15 @@ async def _read_capped(response: httpx.Response, url: str) -> bytes:
     # limit exists to bound.
     body = bytearray()
     async for chunk in response.aiter_bytes():
-        body += chunk
-        if len(body) > MAX_RESPONSE_SIZE:
+        # Measured BEFORE the copy. Checking after the append copies in exactly
+        # the response being refused, and `aiter_bytes()` promises nothing about
+        # chunk size -- one chunk can be the whole body, so "one chunk over" is
+        # not a small overshoot.
+        if len(body) + len(chunk) > MAX_RESPONSE_SIZE:
             raise FetchError(
                 url, f"{_where(response)} sent over the {MAX_RESPONSE_SIZE} byte limit"
             )
+        body += chunk
     return bytes(body)
 
 

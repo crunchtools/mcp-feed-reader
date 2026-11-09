@@ -185,6 +185,56 @@ class TestRetry:
             f"sent over the {fetcher.MAX_RESPONSE_SIZE} byte limit"
         )
 
+    async def test_one_oversized_chunk_is_refused_before_it_is_copied(
+        self, transport: Callable[..., list[str]], backoff: list[float]
+    ) -> None:
+        """`aiter_bytes()` promises nothing about chunk size: one can be the body.
+
+        The previous version appended the chunk and then measured, so exactly
+        the response being refused had already been copied in. With one chunk
+        carrying the whole body, "one chunk over" is not a small overshoot.
+        """
+
+        async def one_huge_chunk() -> AsyncIterator[bytes]:
+            yield b"y" * (fetcher.MAX_RESPONSE_SIZE + 1)
+
+        answer = httpx.Response(
+            200,
+            headers={"content-type": "application/rss+xml"},
+            content=one_huge_chunk(),
+        )
+        assert "content-length" not in answer.headers
+        transport(answer)
+
+        with pytest.raises(FetchError) as caught:
+            await fetcher.fetch_feed(URL)
+
+        assert str(caught.value) == (
+            "Failed to fetch https://example.com/feed.xml: "
+            "GET https://example.com/feed.xml (HTTP 200, application/rss+xml) "
+            f"sent over the {fetcher.MAX_RESPONSE_SIZE} byte limit"
+        )
+
+    async def test_a_body_exactly_at_the_cap_is_accepted(
+        self, transport: Callable[..., list[str]], backoff: list[float]
+    ) -> None:
+        """The other side of the boundary, so it is a claim and not a coincidence."""
+        feed = (
+            b'<?xml version="1.0"?><rss version="2.0"><channel>'
+            b"<title>t</title><link>https://example.com</link>"
+            b"<description>d</description></channel></rss>"
+        )
+        padding = b"<!--" + b"p" * (fetcher.MAX_RESPONSE_SIZE - len(feed) - 7) + b"-->"
+        body = feed + padding
+        assert len(body) == fetcher.MAX_RESPONSE_SIZE
+        transport(
+            httpx.Response(200, headers={"content-type": "application/rss+xml"}, content=body)
+        )
+
+        result = await fetcher.fetch_feed(URL)
+
+        assert result is not None
+
     async def test_a_definite_failure_says_what_came_back(
         self, transport: Callable[..., list[str]], backoff: list[float]
     ) -> None:

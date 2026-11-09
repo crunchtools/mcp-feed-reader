@@ -8,6 +8,22 @@ Entries prior to 2026-09-19 are back-filled from GitHub Release notes (RT #1484)
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-11-09
+
+### Fixed
+
+- **The response ceiling was measured after the chunk was already copied in.**
+  The loop appended each chunk and then compared the running total, so exactly
+  the response being refused had been copied into the buffer by the time the
+  limit looked at it. `aiter_bytes()` promises nothing about chunk size — one
+  chunk can be the whole body — so "one chunk over" is not a small overshoot.
+  Measured before the copy now, which is the shape the rest of the fleet
+  carries (RT #1601, item I20).
+
+  Two tests, as a pair, so the boundary is a claim rather than a coincidence: a
+  single chunk one byte over the cap is refused, and a body of exactly the cap
+  is accepted.
+
 ## [0.6.0] - 2026-11-08
 
 ### Fixed
