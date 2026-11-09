@@ -8,6 +8,44 @@ Entries prior to 2026-09-19 are back-filled from GitHub Release notes (RT #1484)
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-08
+
+### Fixed
+
+- **A feed behind bot protection was recorded as a feed with no entries.** This
+  is the RT #1596 failure in the one server here that reaches arbitrary sites,
+  and it was silent. feedparser answers an HTML page — a Cloudflare "Just a
+  moment..." challenge among them — with `bozo=False` and zero entries, which is
+  indistinguishable from a feed that happens to be empty, and the old guard
+  only fired on `bozo and not entries`. A crawl that hit a challenge page
+  therefore stored an empty feed and moved on. `fetch_feed` now requires
+  feedparser to have recognised a feed format at all (`parsed.version`), and
+  says what came back when it did not. A valid feed with no entries is still a
+  feed and still succeeds.
+
+- **The response cap is now a ceiling.** It compared `len(response.content)`
+  *after* reading the whole body, so the memory the limit exists to protect had
+  already been spent by the time it looked. The body is now read in bounded
+  pieces and the read aborts the moment the running total passes
+  `MAX_RESPONSE_SIZE`; `content-length` is an early reject, guarded so a
+  malformed value is not an unhandled `ValueError`.
+
+- **An error says which site answered, and with what.** A definite failure
+  reported `HTTP 404` and nothing else, and a transient one logged the same, so
+  a dead feed, a parked domain, a login page and a WAF block were one message.
+  They now name the method, the URL actually requested after redirects, the
+  status, the content-type and a short body snippet.
+
+### Changed
+
+- feedparser is handed the response bytes rather than a decoded string. It
+  reads the XML declaration and charset itself, and it is the only thing here
+  that knows what a feed claims its encoding is.
+
+- Inherits constitution v1.36.0, whose MCP Server profile 1.8.0 states the
+  outbound HTTP contract and checks it. The User-Agent this server already sent
+  is what that contract now requires of every server.
+
 ## [0.5.1] - 2026-10-31
 
 ### Security

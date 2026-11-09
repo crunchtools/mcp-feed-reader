@@ -91,3 +91,14 @@ path = ".pre-commit-config.yaml"
 pattern = "ruff-check"
 justification = "ruff runs inside the sdlc-commit hook from python-sdlc (constitution XII v1.30.0), configured by [tool.ruff] in pyproject.toml; Gourmand looks for a literal ruff hook id"
 classification = "by_design"
+
+# `_where` has six callers (lines 65, 69, 124, 133, 178, 183). Five of them are
+# inside f-strings, which this check does not appear to count, so it sees the one
+# bare call at 178 and reports a single-use helper. Inlining it would put the same
+# three-field format string in six places, which is the duplication the next
+# message to drift would hide.
+[[exceptions]]
+check = "single_use_helpers"
+path = "src/mcp_feed_reader_crunchtools/fetcher.py"
+justification = "_where has six call sites; five are inside f-strings and are not counted. Inlining it would duplicate the method/URL/status/content-type format in six error paths, which is what makes such messages drift apart"
+classification = "gourmand_bug"

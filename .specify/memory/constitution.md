@@ -2,9 +2,9 @@
 
 > **Version:** 1.1.1
 > **Ratified:** 2026-03-07
-> **Amended:** 2026-10-10
+> **Amended:** 2026-11-08
 > **Status:** Active
-> **Inherits:** [crunchtools/constitution](https://github.com/crunchtools/constitution) v1.31.0
+> **Inherits:** [crunchtools/constitution](https://github.com/crunchtools/constitution) v1.36.0
 > **Profile:** MCP Server
 
 This file holds what is specific to mcp-feed-reader. The fleet rules and the
@@ -23,7 +23,9 @@ restated here.
   queries 500, page size 500, `since_days` 366. An OPML import without a
   `<body>` element is rejected.
 - **Feed fetching:** TLS certificates are validated, requests time out after
-  30s, responses are capped at 10MB, at most 5 redirects are followed, and
+  30s, responses are capped at 10MB while reading rather than from the
+  `content-length` header a chunked reply need not send, at most 5 redirects
+  are followed, and
   every request carries an identifying User-Agent. Transient failures (429,
   500, 502, 503, 504, dropped connections) are retried with exponential
   backoff, three attempts in all.
