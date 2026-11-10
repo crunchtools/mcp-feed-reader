@@ -8,6 +8,21 @@ Entries prior to 2026-09-19 are back-filled from GitHub Release notes (RT #1484)
 
 ## [Unreleased]
 
+## [0.6.2] - 2026-11-10
+
+### Fixed
+
+- **The builder installed `pip install --prefix=/usr .`, which reads only
+  pyproject.toml's floor-pins and resolves dependencies fresh at build time**
+  instead of installing the committed, Dependabot-maintained `uv.lock`. The
+  image shipped whatever had been released that morning, resolved separately
+  from the set CI actually tested against (RT #1564; same class of bug that
+  caused the mcp-gemini prod outage, PR #72). Added a `lock` stage that
+  exports `uv.lock` via `uv export --frozen --no-dev --no-emit-project`, and
+  the builder now installs that locked, hashed requirements list with
+  `uv pip install --prefix=/usr --no-deps` before installing the project
+  itself with `--no-deps` so pip cannot re-resolve around the lock.
+
 ## [0.6.1] - 2026-11-09
 
 ### Fixed
