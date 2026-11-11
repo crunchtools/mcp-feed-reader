@@ -94,8 +94,8 @@ Add to the entries test suite:
 
 1. Implement in `models.py` (params + validator), `tools/entries.py` (SQL), `server.py` (tool signature + docstring).
 2. Five quality gates in order: `ruff` → `mypy` → `pytest` → `gourmand --full .` → `podman build`.
-3. Bump version in all four locations (pyproject, `server.py` FastMCP ctor, `__init__.py`, `server.json`), tag `v0.2.0`, push → CI publishes PyPI + dual-push Quay/GHCR.
-4. Deploy to lotor: pull `quay.io/crunchtools/mcp-feeds` (canonical — never GHCR), restart the unit.
+3. Bump version in all four locations (pyproject, `server.py` FastMCP ctor, `__init__.py`, `server.json`), tag `v0.2.0`, push → CI publishes PyPI + Quay.
+4. Deploy to lotor: pull `quay.io/crunchtools/mcp-feeds` (canonical), restart the unit.
 5. **Refresh the gateway tool manifest** — after redeploy, `reconnect_backend_tool(backend="feeds")` then `/mcp` reconnect the client. The gateway caches backend tool schemas in SQLite; a restart alone serves the stale manifest and the new params won't appear. `profiles.yaml` `tools_allow` is unchanged (same tool name).
 
 ## 9. Downstream follow-up (not in this repo)
