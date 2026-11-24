@@ -39,7 +39,7 @@ RUN uv pip install --no-cache --prefix=/usr --no-deps .
 FROM quay.io/hummingbird/python:3.14
 
 LABEL name="mcp-feed-reader-crunchtools" \
-      version="0.6.2" \
+      version="0.7.0" \
       summary="Secure MCP server for RSS/Atom feed reading" \
       description="A self-contained RSS/Atom feed reader MCP server with SQLite backend" \
       maintainer="crunchtools.com" \
