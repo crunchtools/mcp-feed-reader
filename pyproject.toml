@@ -112,4 +112,12 @@ testpaths = ["tests"]
 skip = ["semgrep"]
 
 [tool.sdlc]
+# Written by crunchtools/sdlc's scripts/convert_repo.py: moved from the workflows.
+publish = "pypi"
 repo-kinds = ["mcp-server"]
+
+[tool.sdlc.image]
+# Written by crunchtools/sdlc's scripts/convert_repo.py: moved from the workflows.
+image = "quay.io/crunchtools/mcp-feed-reader"
+boot = "mcp"
+boot-env = "FEED_READER_DB=/tmp/feeds.db\n"
