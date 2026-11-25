@@ -102,3 +102,9 @@ check = "single_use_helpers"
 path = "src/mcp_feed_reader_crunchtools/fetcher.py"
 justification = "_where has six call sites; five are inside f-strings and are not counted. Inlining it would duplicate the method/URL/status/content-type format in six error paths, which is what makes such messages drift apart"
 classification = "gourmand_bug"
+
+[[exceptions]]
+check = "CH001-absolute_paths"
+path = "pyproject.toml"
+justification = "boot-env points the boot job's throwaway database at /tmp inside the container under test; it never touches a host path"
+classification = "by_design"
